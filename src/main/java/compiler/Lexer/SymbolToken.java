@@ -18,4 +18,11 @@ public enum SymbolToken implements Symbol{
     SymbolToken(String label) {
         this.label = label;
     }
+
+    @Override
+    public String toString() {
+        return "SymbolToken{" +
+                "label='" + label + '\'' +
+                '}';
+    }
 }

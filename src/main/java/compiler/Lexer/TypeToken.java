@@ -13,4 +13,10 @@ public enum TypeToken implements Symbol{
         this.label = label;
     }
 
+    @Override
+    public String toString() {
+        return "TypeToken{" +
+                "label='" + label + '\'' +
+                '}';
+    }
 }

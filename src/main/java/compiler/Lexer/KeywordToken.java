@@ -24,4 +24,10 @@ public enum KeywordToken implements Symbol{
         this.label = label;
     }
 
+    @Override
+    public String toString() {
+        return "KeywordToken{" +
+                "label='" + label + '\'' +
+                '}';
+    }
 }

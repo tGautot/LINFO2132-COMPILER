@@ -1,4 +1,6 @@
 import static org.junit.Assert.assertNotNull;
+
+import compiler.Lexer.Symbol;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -11,7 +13,10 @@ public class TestLexer {
         String input = "var x int = 2;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        assertNotNull(lexer.getNextSymbol());
+        Symbol nxtSymbol = lexer.getNextSymbol();
+        System.out.println(nxtSymbol.toString());
+        assertNotNull(nxtSymbol);
+
     }
 
 }

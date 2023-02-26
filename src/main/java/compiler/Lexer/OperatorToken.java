@@ -21,4 +21,10 @@ public enum OperatorToken implements Symbol{
         this.label = label;
     }
 
+    @Override
+    public String toString() {
+        return "OperatorToken{" +
+                "label='" + label + '\'' +
+                '}';
+    }
 }

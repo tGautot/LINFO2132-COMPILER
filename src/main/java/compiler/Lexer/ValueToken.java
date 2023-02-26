@@ -16,4 +16,12 @@ public class ValueToken implements Symbol{
         this.valType = valType;
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "ValueToken{" +
+                "valType=" + valType +
+                ", value='" + value + '\'' +
+                '}';
+    }
 }
