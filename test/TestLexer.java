@@ -13,8 +13,11 @@ public class TestLexer {
         String input = "var x int = 2;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        Symbol nxtSymbol = lexer.getNextSymbol();
-        System.out.println(nxtSymbol.toString());
+        Symbol nxtSymbol = null;
+        for(int i = 0; i < 10; i++){
+            nxtSymbol = lexer.getNextSymbol();
+            System.out.println(nxtSymbol.toString());
+        }
         assertNotNull(nxtSymbol);
 
     }

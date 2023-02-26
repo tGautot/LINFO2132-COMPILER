@@ -11,7 +11,7 @@ public enum SymbolToken implements Symbol{
     COMMA(","),
     SEMICOLON(";"),
     DOT("."),
-    END_OF_FILE("");
+    END_OF_FILE("EOF");
 
     public final String label;
 

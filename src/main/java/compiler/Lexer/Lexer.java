@@ -42,7 +42,7 @@ public class Lexer {
                     if(nxt.toString().equals("{")) return SymbolToken.OPEN_CB;
                     if(nxt.toString().equals("}")) return SymbolToken.CLOSE_CB;
 
-                    if(nxt.toString().equals("\"")){
+                    if(nxt.toString().equals("\"")){ // Is a string value
                         char nxtChar;
                         while(true){
                             this.input.mark(MAX_VALUE); // Might need to reset if we read a char we shouldn't
@@ -75,7 +75,7 @@ public class Lexer {
 
                     // All 2-chars symbols have been checked, was a one char symbol
                     this.input.reset();
-                    nxt = new StringBuilder("" + this.input.read());
+                    nxt = new StringBuilder("" +  (char) this.input.read());
                     if(nxt.toString().equals("/")) return OperatorToken.DIVIDE;
                     if(nxt.toString().equals(">")) return OperatorToken.GREATER;
                     if(nxt.toString().equals("<")) return OperatorToken.SMALLER;
