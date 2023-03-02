@@ -3,7 +3,11 @@ import static org.junit.Assert.assertNotNull;
 import compiler.Lexer.Symbol;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import compiler.Lexer.Lexer;
 
 public class TestLexer {
@@ -15,6 +19,22 @@ public class TestLexer {
         Lexer lexer = new Lexer(reader);
         Symbol nxtSymbol = null;
         for(int i = 0; i < 10; i++){
+            nxtSymbol = lexer.getNextSymbol();
+            System.out.println(nxtSymbol.toString());
+        }
+        assertNotNull(nxtSymbol);
+
+    }
+
+    @Test
+    public void testStrings() throws IOException {
+        Path filePath = Path.of("./test/testStrings.txt");
+
+        String input = Files.readString(filePath);
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        for(int i = 0; i < 100; i++){
             nxtSymbol = lexer.getNextSymbol();
             System.out.println(nxtSymbol.toString());
         }
