@@ -11,4 +11,9 @@ public class IdentifierToken implements Symbol{
                 "label='" + label + '\'' +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof  IdentifierToken) && ((IdentifierToken) obj).label.equals(this.label);
+    }
 }

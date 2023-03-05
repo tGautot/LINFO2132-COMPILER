@@ -3,3 +3,5 @@ var s2 string = """";
 var s3 string = "\"";
 var s4 string = "\\";
 var s5 string = "\\\\\\""\\\""; // -> "\\\""\""
+var s6 string = "\\\"\t\"\n\\\t\"\n";
+var s7 string = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

@@ -24,4 +24,12 @@ public class ValueToken implements Symbol{
                 ", value='" + value + '\'' +
                 '}';
     }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof  ValueToken)
+                && ((ValueToken) obj).value.equals(this.value)
+                && ((ValueToken) obj).valType.equals(this.valType);
+    }
 }

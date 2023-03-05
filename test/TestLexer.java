@@ -1,6 +1,7 @@
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import compiler.Lexer.Symbol;
+import compiler.Lexer.*;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -8,22 +9,118 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import compiler.Lexer.Lexer;
-
 public class TestLexer {
+
     
     @Test
-    public void test() {
+    public void baseTest() {
         String input = "var x int = 2;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Symbol nxtSymbol = null;
-        for(int i = 0; i < 10; i++){
+        Symbol[] expectedSymbols = {
+                KeywordToken.VARIABLE,
+                new IdentifierToken("x"),
+                TypeToken.INT,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "2"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
             nxtSymbol = lexer.getNextSymbol();
-            System.out.println(nxtSymbol.toString());
+            assertEquals(nxtSymbol, expectedSymbol);
         }
-        assertNotNull(nxtSymbol);
+        //assertNotNull(nxtSymbol);
 
+    }
+
+    @Test
+    public void testTypes() {
+        String input = "string bool int real";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                TypeToken.STRING,
+                TypeToken.BOOL,
+                TypeToken.INT,
+                TypeToken.DOUBLE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+
+    }
+
+    @Test
+    public void testProc() {
+        String input = "                                                                                              \n" +
+                "proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}\n";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                KeywordToken.FUNCTION,
+                new IdentifierToken("square"),
+                SymbolToken.OPEN_PARENTHESIS,
+                new IdentifierToken("v"),
+                TypeToken.INT,
+                SymbolToken.CLOSE_PARENTHESIS,
+                TypeToken.INT,
+                SymbolToken.OPEN_CB,
+                KeywordToken.RETURN,
+                new IdentifierToken("v"),
+                OperatorToken.TIMES,
+                new IdentifierToken("v"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.CLOSE_CB,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+
+    }
+
+    @Test
+    public void testRecord() {
+        String input = "record Person {\n" +
+                "    name string;\n" +
+                "    location Point;\n" +
+                "    history int[];\n" +
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+            KeywordToken.RECORD,
+            new IdentifierToken("Person"),
+            SymbolToken.OPEN_CB,
+            new IdentifierToken("name"),
+            TypeToken.STRING,
+            SymbolToken.SEMICOLON,
+            new IdentifierToken("location"),
+            new IdentifierToken("Point"),
+            SymbolToken.SEMICOLON,
+            new IdentifierToken("history"),
+            TypeToken.INT,
+            SymbolToken.OPEN_BRACKET,
+            SymbolToken.CLOSE_BRACKET,
+            SymbolToken.SEMICOLON,
+            SymbolToken.CLOSE_CB,
+            SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
     }
 
     @Test
@@ -34,9 +131,56 @@ public class TestLexer {
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Symbol nxtSymbol = null;
-        for(int i = 0; i < 100; i++){
+        Symbol[] expectedSymbols = {
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s1"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, "\\\\\""),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s2"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, ""),
+                new ValueToken(ValueToken.ValueType.STRING, ""),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s3"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, "\""),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s4"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, "\\"),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s5"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, "\\\\\\"),
+                new ValueToken(ValueToken.ValueType.STRING, "\\\""),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s6"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, "\\\"\t\"\n\\\t\"\n"),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("s7"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING, "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
             nxtSymbol = lexer.getNextSymbol();
-            System.out.println(nxtSymbol.toString());
+            assertEquals(nxtSymbol, expectedSymbol);
         }
         assertNotNull(nxtSymbol);
 

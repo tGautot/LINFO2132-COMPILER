@@ -47,21 +47,18 @@ public class Lexer {
                         while(true){
                             this.input.mark(MAX_VALUE); // Might need to reset if we read a char we shouldn't
                             nxtChar = (char) this.input.read();
-                            if(nxtChar == '"') { // This double quote could represent end of string of be part of \"
-                                // Double quote is NOT end of string if prefixed by odd number of backslashes
-                                String currString = nxt.toString();
-                                int i = currString.length()-1;
-                                int bsCount = 0;
-                                while(i > 0 && currString.charAt(i) == '\\'){
-                                    bsCount++;
-                                    i--;
-                                }
-                                if(bsCount%2==0){
-                                    return new ValueToken(ValueToken.ValueType.STRING, nxt.substring(1));
-                                }
+                            if(nxtChar == '"') {
+                                return new ValueToken(ValueToken.ValueType.STRING, nxt.substring(1));
                             }
                             if(nxtChar == '\n'){
                                 throw new InvalidTokenException("Reached end of line before end of string");
+                            }
+                            if(nxtChar == '\\'){
+                                char bsChar = (char) this.input.read();
+                                if(bsChar == 'n') nxtChar = '\n';
+                                else if(bsChar == 't') nxtChar = '\t';
+                                else if(bsChar == '"') nxtChar = '\"';
+                                else if(bsChar != '\\') throw new InvalidTokenException("Unrecognized char in string: \\" + bsChar);
                             }
                             nxt.append(nxtChar);
                         }

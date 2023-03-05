@@ -8,7 +8,7 @@ public class Charsets {
             "0123456789";
 
     public static final String symbols =
-            "=+-/.,;%<>(){}[]\\\"";
+            "=+-/*.,;%<>(){}[]\\\"";
 
     public static final String whitespaces =
             " \t\n";
