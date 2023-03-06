@@ -32,7 +32,6 @@ public class TestLexer {
             assertEquals(nxtSymbol, expectedSymbol);
         }
         //assertNotNull(nxtSymbol);
-
     }
 
     @Test
