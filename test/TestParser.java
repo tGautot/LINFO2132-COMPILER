@@ -33,4 +33,29 @@ public class TestParser {
 
     }
 
+    @Test
+    public void testRecords(){
+        String input = "record Point {\n" +
+                "    x real;\n" +
+                "    y real;\n" +
+                "}\n" +
+                "\n" +
+                "record Person {\n" +
+                "    name string;\n" +
+                "    location Point;\n" +
+                "    history int[];\n" +
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("RESULT:");
+        System.out.println(sl.toString());
+    }
+
 }

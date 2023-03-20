@@ -2,6 +2,7 @@ package compiler.parser;
 
 import compiler.Lexer.*;
 
+import java.rmi.UnexpectedException;
 import java.util.ArrayList;
 
 public class Parser {
@@ -11,6 +12,7 @@ public class Parser {
     public Parser(Lexer lexer){
         this.lexer = lexer;
         readSymbol(); // Place first token in lookahead
+        readSymbol();
     }
 
     private void readSymbol(){
@@ -22,7 +24,6 @@ public class Parser {
         ASTNodes.StatementList sl = new ASTNodes.StatementList();
         sl.statements = new ArrayList<>();
         while(true){
-            readSymbol();
             ASTNodes.Statement s = parseStatement();
             if(s == null) return sl;
             sl.statements.add(s);
@@ -48,12 +49,14 @@ public class Parser {
         }
         if(nxtToken == KeywordToken.FOR_LOOP){
             // For loop
+            return parseForLoop();
         }
         if(nxtToken == KeywordToken.WHILE){
             // While loop
         }
         if(nxtToken == KeywordToken.RECORD){
             // Record
+            return parseRecord();
         }
         if(nxtToken == KeywordToken.RETURN){
 
@@ -197,9 +200,113 @@ public class Parser {
         return params;
     }
 
-    public ASTNodes.Expression parseExpression(){
+    public ASTNodes.ForLoop parseForLoop() throws ParserException {
+        System.out.println("Parsing for loop");
+        // nxt symbol should be `for`
+        ASTNodes.ForLoop node = new ASTNodes.ForLoop();
+        readSymbol();
+        if(!(nxtToken instanceof IdentifierToken)){
+            throw new ParserException("For loop expects a variable");
+        }
+        node.loopVarIdentifier = ((IdentifierToken) nxtToken).label;
+        readSymbol();
+        if(nxtToken != OperatorToken.ASSIGN){
+            throw new ParserException("Unexpected token in init of for loop: " + nxtToken);
+        }
+        readSymbol();
+        node.initValExpr = parseExpression();
+        if(nxtToken != KeywordToken.TO){
+            throw new ParserException("Expected keyword `to` in for loop but got " + nxtToken);
+        }
+        readSymbol();
+        node.endValExpr = parseExpression();
+        if(nxtToken != KeywordToken.BY){
+            throw new ParserException("Expected keyword `by` in for loop but got " + nxtToken);
+        }
+        readSymbol();
+        node.increment = parseExpression();
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_CB){
+            throw new ParserException("Expected symbol `{` after for loop to start code block but got " + nxtToken);
+        }
+        readSymbol();
+        node.codeBlock = parseCode();
+        readSymbol();
+        if(nxtToken != SymbolToken.CLOSE_CB){
+            throw new ParserException("Expected symbol `}` to finish codeblock of for loop but got " + nxtToken);
+        }
+        readSymbol();
+        return node;
+    }
+
+    public ASTNodes.Record parseRecord() throws ParserException {
+        System.out.println("Parsing record");
+
+        ASTNodes.Record node = new ASTNodes.Record();
+
+        readSymbol();
+        if(!(nxtToken instanceof IdentifierToken)){
+            throw new ParserException("Expected name of record but got " + nxtToken);
+        }
+        node.identifier = ((IdentifierToken) nxtToken).label;
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_CB){
+            throw new ParserException("Expected symbol `{` after record but got " + nxtToken);
+        }
+        readSymbol();
+        node.recordVars = parseRecordVars();
+        if(nxtToken != SymbolToken.CLOSE_CB){
+            throw new ParserException("Expected `}` after end of record");
+        }
+        readSymbol();
+        return node;
+    }
+
+    public ArrayList<ASTNodes.RecordVar> parseRecordVars() throws ParserException {
+        System.out.println("Parsing recordvars");
+        ArrayList<ASTNodes.RecordVar> vars = new ArrayList<>();
+        while(true){
+            if(!(nxtToken instanceof IdentifierToken)){
+                break;
+            }
+            ASTNodes.RecordVar var = new ASTNodes.RecordVar();
+            var.identifier = ((IdentifierToken) nxtToken).label;
+            readSymbol();
+            var.type = parseType();
+            if(nxtToken != SymbolToken.SEMICOLON){
+                throw new ParserException("Expected `;` after record parameter definition, but got " + nxtToken);
+            }
+            readSymbol();
+            vars.add(var);
+        }
+        return vars;
+    }
+
+    public ASTNodes.Expression parseExpression() throws ParserException {
         System.out.println("Parsing Expression");
         // TODO
-        return null;
+        if(!(nxtToken instanceof ValueToken)){
+            throw new ParserException("The only allowed expressions at the moment are direct values");
+        }
+        ASTNodes.DirectValue node = new ASTNodes.DirectValue();
+        node.value= ((ValueToken) nxtToken).value;
+        node.type = new ASTNodes.Type();
+        node.type.isArray = false;
+        switch(((ValueToken) nxtToken).valType){
+            case INT:
+                node.type.type = "int";
+                break;
+            case BOOL:
+                node.type.type = "bool";
+                break;
+            case REAL:
+                node.type.type = "real";
+                break;
+            case STRING:
+                node.type.type = "string";
+                break;
+        }
+        readSymbol();
+        return node;
     }
 }

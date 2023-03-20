@@ -185,9 +185,9 @@ public class ASTNodes {
         @Override
         public abstract String toString();
     }
-    public class DirectValue extends Expression {
+    public static class DirectValue extends Expression {
         String value;
-        Type type; // Only primitive type, change later
+        Type type;
 
         @Override
         public String toString() {
