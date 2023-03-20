@@ -2,12 +2,19 @@ Notes:
     - \0 means epsilon
     - Starts with lower case: terminal symbol, otherwise, non-terminal
 
+var aaa; // VarCreation
+aaa = 5; // VarAssign
+print("aaa")
 
 Code -> StatementList
 StatementList -> Statement StatementList | \0
 Statement -> FunctionDef | VarCreation | ValCreation | VarAssign | Record | FunctionCall | IfCond | ForLoop | WhileLoop | ReturnExpr | \0
 
-Type -> bool | int | real | string | bool [ ] | int [ ] | real [ ] | string [ ] | identifier | identifier [ ]
+Type -> BaseType | ArrayType
+BaseType -> bool | int | real | string | identifier
+ArrayType -> bool [ ] | int [ ] | real [ ] | string [ ] | identifier [ ]
+
+VarAssign -> identifier = Expression ; | RefToValue = Expression ;
 
 FunctionDef -> proc identifier ( ParamList ) Type CodeBlock
 ParamList -> Param MoreParams | \0
@@ -37,10 +44,11 @@ ReturnExpr -> return Expression ;
 Expression -> Value | identifier | RefToValue | ArrayCreation | ObjectCreation | MathExpr | Comparison | FunctionCall
 Value -> intValue | realValue | boolValue | stringValue
 RefToValue -> ArrayAccess | ObjectAccess
-ArrayCreation -> Type [ ] ( Expression )
+ArrayCreation -> BaseType [ ] ( Expression )
 ObjectCreation -> identifier ( ParamVals )
 Comparison -> Expression == Expression | Expression <> Expression | ...
 ArrayAccess -> identifier [ Expression ]
 ObjectAccess -> RefToValue . identifier | identifier . identifier
 
 MathExpr -> - Expression | ( Expression ) | Expression + Expression | Expression - Expression | ... (* / %)
+
