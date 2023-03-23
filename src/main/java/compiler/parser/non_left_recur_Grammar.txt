@@ -1,0 +1,26 @@
+
+ArrayCreation -> BaseType [ ] ( Expression )
+ObjectCreation -> identifier ( ParamVals )
+ArrayAccess -> identifier [ Expression ]
+Value -> intValue | realValue | boolValue | stringValue
+
+RefToValue -> identifier RefToValue' | ArrayAccess  OU identifier . identifier RefToValue' | ArrayAccess
+RefToValue' -> . RefToValue | \0
+
+Expression -> identifier Cmp' | Value Cmp' | RefToValue Cmp' | ArrayCreation Cmp' | MathExpr MathExpr' Cmp' | ObjectCreation Cmp' | FunctionCall Cmp'
+Cmp' -> == Expression | < Expression | > Expression | >= Expression | <= Expression | <> Expression | \0
+MathExpr' -> + Expression MathExpr' | - Expression MathExpr' | * Expression MathExpr' | / Expression MathExpr' | % Expression MathExpr' | \0
+MathExpr -> - Expression | ( Expression ) | Value | identifier | RefToValue | ArrayCreation | ObjectCreation | FunctionCall
+
+
+
+
+
+
+####
+
+RefToValue -> ObjectAccess ObjectAccessPrime | ArrayAccess
+ObjectAccess -> identifier ObjectAccessPrime | identifier . identifier
+ObjectAccessPrime -> . identifier ObjectAccessPrime | ε
+
+###
