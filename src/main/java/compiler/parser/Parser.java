@@ -35,13 +35,16 @@ public class Parser {
         if(nxtToken == KeywordToken.VARIABLE){
             return parseVarCreation();
         }
+        if(nxtToken == KeywordToken.VALUE){
+            // TODO parse ValCreation
+        }
         if(nxtToken instanceof IdentifierToken){
             // Either VarAssign or FunctionCall
             if(lookAhead == SymbolToken.OPEN_PARENTHESIS){
                 // FunctionCall
                 return parseFunctionCall();
             }
-            // TODO VarAssign
+
         }
         if(nxtToken == KeywordToken.FUNCTION){
             // FunctionDef
@@ -59,10 +62,10 @@ public class Parser {
             return parseRecord();
         }
         if(nxtToken == KeywordToken.RETURN){
-
+            return parseReturn();
         }
         if(nxtToken == KeywordToken.IF){
-
+            return parseIfCond();
         }
         return null;
         //throw new ParserException("Cannot begin statement with " + nxtToken.toString());
@@ -280,6 +283,131 @@ public class Parser {
             vars.add(var);
         }
         return vars;
+    }
+
+    public ASTNodes.ReturnExpr parseReturn() throws ParserException {
+        System.out.println("Parsing return statement");
+        readSymbol();
+        ASTNodes.ReturnExpr node = new ASTNodes.ReturnExpr();
+        node.expr = parseExpression();
+        readSymbol();
+        if(nxtToken != SymbolToken.SEMICOLON){
+            throw new ParserException("Expected `;` after return statement but got " + nxtToken);
+        }
+        return node;
+    }
+
+    public ASTNodes.IfCond parseIfCond() throws ParserException {
+        System.out.println("Parsing IfCond");
+        // If in nxtToken
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_PARENTHESIS){
+            throw new ParserException("Expected `(` after `if` keyword but got " + nxtToken);
+        }
+        readSymbol();
+        ASTNodes.IfCond node = new ASTNodes.IfCond();
+        node.condition = parseExpression();
+        if(nxtToken != SymbolToken.CLOSE_PARENTHESIS){
+            throw new ParserException("Expected `)` after end of condition in `if` but got " + nxtToken);
+        }
+
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_CB){
+            throw new ParserException("Expected `{` to open codeblock after `if` but got " + nxtToken);
+        }
+        readSymbol();
+        node.codeBlock = parseCode();
+        if(nxtToken != SymbolToken.CLOSE_CB){
+            throw new ParserException("Expected `}` to close codeblock after `if` but got " + nxtToken);
+        }
+        readSymbol();
+        if(nxtToken != KeywordToken.ELSE){
+            return node;
+        }
+
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_CB){
+            throw new ParserException("Expected `{` to open codeblock after `else` but got " + nxtToken);
+        }
+        readSymbol();
+        node.elseCodeBlock = parseCode();
+        if(nxtToken != SymbolToken.CLOSE_CB){
+            throw new ParserException("Expected `}` to close codeblock after `else` but got " + nxtToken);
+        }
+        return node;
+    }
+
+    public ASTNodes.VarAssign parseVarAssign() throws ParserException {
+        ASTNodes.VarAssign node = null;
+        if(lookAhead == OperatorToken.ASSIGN){
+            node = new ASTNodes.DirectVarAssign();
+            readSymbol();
+            readSymbol();
+            node.value = parseExpression();
+        }
+        else{
+            // TODO need to handle ref-to-value left recursivity problems
+        }
+        return node;
+    }
+
+    public ASTNodes.RefToValue parseRefToValue() throws ParserException {
+
+        ArrayList<ASTNodes.RefToValue> q = new ArrayList<>();
+
+        if( !(nxtToken instanceof IdentifierToken)){
+            throw new ParserException("Expected identifier but got " + nxtToken);
+        }
+
+        IdentifierToken initToken = (IdentifierToken) nxtToken;
+
+        while(lookAhead == SymbolToken.DOT || lookAhead == SymbolToken.OPEN_BRACKET){
+            //System.out.println(nxtToken);
+            ASTNodes.RefToValue node = null;
+            if(lookAhead == SymbolToken.DOT){
+                node = new ASTNodes.ObjectAccessFromRef();
+                ((ASTNodes.ObjectAccessFromRef) node).object = null;
+                readSymbol(); readSymbol();
+                ((ASTNodes.ObjectAccessFromRef) node).accessIdentifier = ((IdentifierToken) nxtToken).label;
+
+            }
+            else{
+                node = new ASTNodes.ArrayAccessFromRef();
+                if( !(nxtToken instanceof IdentifierToken)){
+                    throw new ParserException("Expected identifier before array access but got " + nxtToken);
+                }
+                ((ASTNodes.ArrayAccessFromRef) node).ref =  null;
+                readSymbol();
+                readSymbol();
+                ((ASTNodes.ArrayAccessFromRef) node).arrayIndex = parseExpression();
+            }
+            q.add(node);
+        }
+        System.out.println("---------------------------------");
+        ASTNodes.RefToValue source ;
+        if(q.get(0) instanceof ASTNodes.ObjectAccessFromRef){
+            source = new ASTNodes.ObjectAccessFromId();
+            ((ASTNodes.ObjectAccessFromId) source).identifier = initToken.label;
+            ((ASTNodes.ObjectAccessFromId) source).accessIdentifier = ((ASTNodes.ObjectAccessFromRef) q.get(0)).accessIdentifier;
+        }
+        else {
+            source = new ASTNodes.ArrayAccessFromId();
+            ((ASTNodes.ArrayAccessFromId) source).arrayId = initToken.label;
+            ((ASTNodes.ArrayAccessFromId) source).arrayIndex = ((ASTNodes.ArrayAccessFromRef) q.get(0)).arrayIndex;
+
+        }
+        q.set(0, source);
+
+        for(int i = 1; i < q.size(); i++){
+            ASTNodes.RefToValue r2v = q.get(i);
+            if(r2v instanceof ASTNodes.ObjectAccessFromRef){
+                ((ASTNodes.ObjectAccessFromRef) r2v).object = q.get(i-1);
+            }
+            if(r2v instanceof ASTNodes.ArrayAccessFromRef){
+                ((ASTNodes.ArrayAccessFromRef) r2v).ref = q.get(i-1);
+            }
+        }
+        return q.get(q.size()-1);
     }
 
     public ASTNodes.Expression parseExpression() throws ParserException {

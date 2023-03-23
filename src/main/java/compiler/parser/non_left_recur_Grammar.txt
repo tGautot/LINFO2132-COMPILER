@@ -1,11 +1,12 @@
 
 ArrayCreation -> BaseType [ ] ( Expression )
 ObjectCreation -> identifier ( ParamVals )
-ArrayAccess -> identifier [ Expression ]
+ObjectAccess -> RefToValue . identifier | identifier . identifier
+ArrayAccess -> identifier [ Expression ] | ObjectAccess [ Expression ]
 Value -> intValue | realValue | boolValue | stringValue
 
 RefToValue -> identifier . identifier RefToValue' | ArrayAccess RefToValue'
-RefToValue' -> . RefToValue | \0
+RefToValue' -> . RefToValue | . identifier RefToValue' | \0
 
 Expression -> identifier Cmp' | Value Cmp' | RefToValue Cmp' | ArrayCreation Cmp' | MathExpr MathExpr' Cmp' | ObjectCreation Cmp' | FunctionCall Cmp'
 Cmp' -> == Expression | < Expression | > Expression | >= Expression | <= Expression | <> Expression | \0

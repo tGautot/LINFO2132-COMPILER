@@ -7,10 +7,7 @@ import compiler.parser.Parser;
 import compiler.parser.ParserException;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class TestParser {
 
@@ -51,6 +48,22 @@ public class TestParser {
         ASTNodes.StatementList sl;
         try {
             sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("RESULT:");
+        System.out.println(sl.toString());
+    }
+
+    @Test
+    public void testRefToValue(){
+        String input = "zzz.yyy.xxx[3].bbb.ccc";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.RefToValue sl;
+        try {
+            sl = parser.parseRefToValue();
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }

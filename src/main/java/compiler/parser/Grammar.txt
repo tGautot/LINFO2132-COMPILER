@@ -22,7 +22,7 @@ MoreParams -> , ParamList | \0
 Param -> Type identifier | \0
 
 CodeBlock -> { StatementList }
-
+node.
 VarCreation -> var identifier Type ; | var identifier Type = Expression ;
 ValCreation -> val identifier Type = Expression ;
 
@@ -47,7 +47,7 @@ RefToValue -> ArrayAccess | ObjectAccess
 ArrayCreation -> BaseType [ ] ( Expression )
 ObjectCreation -> identifier ( ParamVals )
 Comparison -> Expression == Expression | Expression <> Expression | ...
-ArrayAccess -> identifier [ Expression ]
+ArrayAccess -> identifier  [ Expression ] | ObjectAccess [ Expression ]
 ObjectAccess -> RefToValue . identifier | identifier . identifier
 
 MathExpr -> - Expression | ( Expression ) | Expression + Expression | Expression - Expression | ... (* / %)

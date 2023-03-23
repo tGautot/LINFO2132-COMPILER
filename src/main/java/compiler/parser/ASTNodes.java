@@ -94,6 +94,35 @@ public class ASTNodes {
         }
     }
 
+    static public abstract class VarAssign extends Statement{
+        Expression value;
+    }
+
+    static public class DirectVarAssign extends VarAssign{
+        String identifier;
+
+
+        @Override
+        public String toString() {
+            return "DirectVarAssign{" + "\n" +
+                    "identifier='" + identifier + '\'' + "\n" +
+                    ", value=" + value + "\n" +
+                    '}';
+        }
+    }
+
+    static public class RefVarAssign extends VarAssign{
+        RefToValue ref;
+
+        @Override
+        public String toString() {
+            return "RefVarAssign{" + "\n" +
+                    "ref=" + ref + "\n" +
+                    ", value=" + value + "\n" +
+                    '}';
+        }
+    }
+
     static public class Record extends Statement {
         String identifier;
         ArrayList<RecordVar> recordVars;
@@ -223,14 +252,26 @@ public class ASTNodes {
                     '}';
         }
     }
-    static public class ArrayAccess extends RefToValue {
+    static public class ArrayAccessFromId extends RefToValue {
         String arrayId;
         Expression arrayIndex;
 
         @Override
         public String toString() {
-            return "ArrayAccess{" + "\n" +
+            return "ArrayAccessFromId{" + "\n" +
                     "arrayId='" + arrayId + '\'' + "\n" +
+                    ", arrayIndex=" + arrayIndex + "\n" +
+                    '}';
+        }
+    }
+    static public class ArrayAccessFromRef extends RefToValue {
+        RefToValue ref;
+        Expression arrayIndex;
+
+        @Override
+        public String toString() {
+            return "ArrayAccessFromRef{" + "\n" +
+                    "ref='" + ref + '\'' + "\n" +
                     ", arrayIndex=" + arrayIndex + "\n" +
                     '}';
         }
@@ -377,5 +418,6 @@ public class ASTNodes {
             return expr1 + " % " + expr2;
         }
     }
+
 
 }
