@@ -140,7 +140,7 @@ public class ASTNodes {
         Type type;
     }
 
-    static public class FunctionCall extends Statement {
+    static public class FunctionCall extends Expression {
         String identifier;
         ArrayList<Expression> paramVals;
 
@@ -213,6 +213,16 @@ public class ASTNodes {
     static public abstract class Expression {
         @Override
         public abstract String toString();
+    }
+    static public class Identifier extends Expression{
+        String id;
+
+        @Override
+        public String toString() {
+            return "Identifier{" +
+                    "id='" + id + '\'' +
+                    '}';
+        }
     }
     public static class DirectValue extends Expression {
         String value;
@@ -356,6 +366,29 @@ public class ASTNodes {
         @Override
         public String toString() {
             return expr1 + " < " + expr2;
+        }
+    }
+    static public class AndComp extends Comparison {
+        Expression expr1; Expression expr2;
+
+        @Override
+        public String toString() {
+            return "AndComp{" +
+                    "expr1=" + expr1 +
+                    ", expr2=" + expr2 +
+                    '}';
+        }
+    }
+
+    static public class OrComp extends Comparison {
+        Expression expr1; Expression expr2;
+
+        @Override
+        public String toString() {
+            return "OrComp{" +
+                    "expr1=" + expr1 +
+                    ", expr2=" + expr2 +
+                    '}';
         }
     }
 

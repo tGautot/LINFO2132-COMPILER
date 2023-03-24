@@ -42,7 +42,10 @@ public class Parser {
             // Either VarAssign or FunctionCall
             if(lookAhead == SymbolToken.OPEN_PARENTHESIS){
                 // FunctionCall
-                return parseFunctionCall();
+                throw new ParserException("Function call or object creation are not valid statements");
+            }
+            else{
+                return parseVarAssign();
             }
 
         }
@@ -341,13 +344,24 @@ public class Parser {
         ASTNodes.VarAssign node = null;
         if(lookAhead == OperatorToken.ASSIGN){
             node = new ASTNodes.DirectVarAssign();
+            ((ASTNodes.DirectVarAssign) node).identifier = ((IdentifierToken) nxtToken).label;
             readSymbol();
             readSymbol();
             node.value = parseExpression();
         }
         else{
-            // TODO need to handle ref-to-value left recursivity problems
+            node = new ASTNodes.RefVarAssign();
+            ((ASTNodes.RefVarAssign) node).ref = parseRefToValue();
+            readSymbol();
+            node.value = parseExpression();
         }
+
+        if(nxtToken != SymbolToken.SEMICOLON){
+            throw new ParserException("Expected semicolon after var assign but got " + nxtToken);
+        }
+        readSymbol();
+
+
         return node;
     }
 
@@ -383,7 +397,8 @@ public class Parser {
             }
             q.add(node);
         }
-        System.out.println("---------------------------------");
+        readSymbol(); // Consume last symbol;
+
         ASTNodes.RefToValue source ;
         if(q.get(0) instanceof ASTNodes.ObjectAccessFromRef){
             source = new ASTNodes.ObjectAccessFromId();
@@ -411,30 +426,183 @@ public class Parser {
     }
 
     public ASTNodes.Expression parseExpression() throws ParserException {
-        System.out.println("Parsing Expression");
-        // TODO
-        if(!(nxtToken instanceof ValueToken)){
-            throw new ParserException("The only allowed expressions at the moment are direct values");
+        System.out.println("Parsing Expression " + nxtToken);
+
+        ASTNodes.Expression curr = parseComp();
+
+        while(true){
+            ASTNodes.Expression nxt;
+            if(nxtToken == KeywordToken.AND){
+                readSymbol();
+                nxt = new ASTNodes.AndComp();
+                ((ASTNodes.AndComp) nxt).expr1 = curr;
+                ((ASTNodes.AndComp) nxt).expr2 = parseComp();
+            } else if(nxtToken == KeywordToken.OR){
+                readSymbol();
+                nxt = new ASTNodes.OrComp();
+                ((ASTNodes.OrComp) nxt).expr1 = curr;
+                ((ASTNodes.OrComp) nxt).expr2 = parseComp();
+            } else {
+                return curr;
+            }
+            curr = nxt;
         }
-        ASTNodes.DirectValue node = new ASTNodes.DirectValue();
-        node.value= ((ValueToken) nxtToken).value;
-        node.type = new ASTNodes.Type();
-        node.type.isArray = false;
-        switch(((ValueToken) nxtToken).valType){
-            case INT:
-                node.type.type = "int";
-                break;
-            case BOOL:
-                node.type.type = "bool";
-                break;
-            case REAL:
-                node.type.type = "real";
-                break;
-            case STRING:
-                node.type.type = "string";
-                break;
-        }
-        readSymbol();
-        return node;
     }
+
+    public ASTNodes.Expression parseMultMod() throws ParserException {
+        System.out.println("Parsing MultMod " + nxtToken);
+        // Parsing function for  highest precedence math operators : * / %
+        ASTNodes.Expression curr = parseTerm();
+        while(true){
+            ASTNodes.Expression nxt;
+            if(nxtToken == OperatorToken.TIMES){
+                readSymbol();
+                nxt = new ASTNodes.MultExpr();
+                ((ASTNodes.MultExpr) nxt).expr1 = curr;
+                ((ASTNodes.MultExpr) nxt).expr2 = parseTerm();
+            } else if(nxtToken == OperatorToken.DIVIDE){
+                readSymbol();
+                nxt = new ASTNodes.DivExpr();
+                ((ASTNodes.DivExpr) nxt).expr1 = curr;
+                ((ASTNodes.DivExpr) nxt).expr2 = parseTerm();
+            } else if (nxtToken == OperatorToken.MODULUS) {
+                readSymbol();
+                nxt = new ASTNodes.ModExpr();
+                ((ASTNodes.ModExpr) nxt).expr1 = curr;
+                ((ASTNodes.ModExpr) nxt).expr2 = parseTerm();
+            } else {
+                return curr;
+            }
+            curr = nxt;
+        }
+    }
+
+    public ASTNodes.Expression parseAddSub() throws ParserException {
+        System.out.println("Parsing AddSub " + nxtToken);
+        ASTNodes.Expression curr = parseMultMod();
+
+        while(true){
+            ASTNodes.Expression nxt;
+            if(nxtToken == OperatorToken.PLUS){
+                readSymbol();
+                nxt = new ASTNodes.MultExpr();
+                ((ASTNodes.MultExpr) nxt).expr1 = curr;
+                ((ASTNodes.MultExpr) nxt).expr2 = parseMultMod();
+            } else if(nxtToken == OperatorToken.MINUS){
+                readSymbol();
+                nxt = new ASTNodes.DivExpr();
+                ((ASTNodes.DivExpr) nxt).expr1 = curr;
+                ((ASTNodes.DivExpr) nxt).expr2 = parseMultMod();
+            } else {
+                return curr;
+            }
+            curr = nxt;
+        }
+    }
+
+    public ASTNodes.Expression parseComp() throws ParserException{
+        System.out.println("Parsing Comp " + nxtToken);
+        ASTNodes.Expression curr = parseAddSub();
+
+        while(true){
+            ASTNodes.Expression nxt;
+            if(nxtToken == OperatorToken.EQUALS){
+                readSymbol();
+                nxt = new ASTNodes.EqComp();
+                ((ASTNodes.EqComp) nxt).expr1 = curr;
+                ((ASTNodes.EqComp) nxt).expr2 = parseAddSub();
+            } else if(nxtToken == OperatorToken.GRTR_OR_EQUAL){
+                readSymbol();
+                nxt = new ASTNodes.GrEqComp();
+                ((ASTNodes.GrEqComp) nxt).expr1 = curr;
+                ((ASTNodes.GrEqComp) nxt).expr2 = parseAddSub();
+            } else if(nxtToken == OperatorToken.SMLR_OR_EQUAL){
+                readSymbol();
+                nxt = new ASTNodes.SmEqComp();
+                ((ASTNodes.SmEqComp) nxt).expr1 = curr;
+                ((ASTNodes.SmEqComp) nxt).expr2 = parseAddSub();
+            }else if(nxtToken == OperatorToken.GREATER){
+                readSymbol();
+                nxt = new ASTNodes.GrComp();
+                ((ASTNodes.GrComp) nxt).expr1 = curr;
+                ((ASTNodes.GrComp) nxt).expr2 = parseAddSub();
+            }else if(nxtToken == OperatorToken.SMALLER){
+                readSymbol();
+                nxt = new ASTNodes.SmComp();
+                ((ASTNodes.SmComp) nxt).expr1 = curr;
+                ((ASTNodes.SmComp) nxt).expr2 = parseAddSub();
+            }else if(nxtToken == OperatorToken.DIFFERENT){
+                readSymbol();
+                nxt = new ASTNodes.NotEqComp();
+                ((ASTNodes.NotEqComp) nxt).expr1 = curr;
+                ((ASTNodes.NotEqComp) nxt).expr2 = parseAddSub();
+            } else {
+                return curr;
+            }
+            curr = nxt;
+        }
+    }
+
+    public ASTNodes.Expression parseTerm() throws ParserException {
+        System.out.println("Parsing Term " + nxtToken);
+        //
+        if(nxtToken instanceof IdentifierToken){
+            if(lookAhead == SymbolToken.DOT || lookAhead == SymbolToken.OPEN_BRACKET){
+                return parseRefToValue();
+            } else if (lookAhead == SymbolToken.OPEN_PARENTHESIS) {
+                return parseFunctionCall();
+            } else {
+                ASTNodes.Identifier node = new ASTNodes.Identifier();
+                node.id = ((IdentifierToken) nxtToken).label;
+                readSymbol();
+                return node;
+            }
+        } else if(nxtToken instanceof ValueToken){
+            ASTNodes.DirectValue node = new ASTNodes.DirectValue();
+            node.value = ((ValueToken) nxtToken).value;
+            node.type = new ASTNodes.Type();
+            node.type.isArray = false;
+            switch (((ValueToken) nxtToken).valType) {
+                case INT:
+                    node.type.type = "int";
+                    break;
+                case BOOL:
+                    node.type.type = "bool";
+                    break;
+                case REAL:
+                    node.type.type = "real";
+                    break;
+                case STRING:
+                    node.type.type = "string";
+                    break;
+            }
+            readSymbol();
+            return node;
+        } else if (nxtToken instanceof TypeToken) {
+            // Array Creation
+            return parseArrayCreation();
+
+        } else if (nxtToken == OperatorToken.MINUS) {
+            ASTNodes.NegateExpr node = new ASTNodes.NegateExpr();
+            readSymbol();
+            node.expr = parseTerm();
+            return node;
+        } else if (nxtToken == SymbolToken.OPEN_PARENTHESIS){
+            readSymbol();
+            ASTNodes.Expression expr = parseExpression();
+            if(nxtToken != SymbolToken.CLOSE_PARENTHESIS){
+                throw new ParserException("Missing closing parenthesis in expression");
+            }
+            readSymbol();
+            return expr;
+        }
+        throw new ParserException("Couldn't parse expression with term starting with " + nxtToken);
+    }
+
+    private ASTNodes.Expression parseArrayCreation() {
+        // TODO
+        return null;
+    }
+
+
 }
