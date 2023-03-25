@@ -25,53 +25,104 @@ public class Parser {
         sl.statements = new ArrayList<>();
         while(true){
             ASTNodes.Statement s = parseStatement();
-            if(s == null) return sl;
+            if(s == null){
+                return sl;
+            }
             sl.statements.add(s);
         }
     }
 
     public ASTNodes.Statement parseStatement() throws ParserException {
+        while (nxtToken == SymbolToken.SEMICOLON){
+            readSymbol();
+        }
         System.out.println("Parsing statement " + nxtToken);
         if(nxtToken == KeywordToken.VARIABLE){
             return parseVarCreation();
         }
-        if(nxtToken == KeywordToken.VALUE){
-            // TODO parse ValCreation
+        else if(nxtToken == KeywordToken.VALUE){
+            return parseValCreation();
         }
-        if(nxtToken instanceof IdentifierToken){
+        else if(nxtToken == KeywordToken.CONST){
+            return parseConstCreation();
+        }
+        else if(nxtToken instanceof IdentifierToken){
             // Either VarAssign or FunctionCall
             if(lookAhead == SymbolToken.OPEN_PARENTHESIS){
                 // FunctionCall
-                throw new ParserException("Function call or object creation are not valid statements");
+                return parseFunctionCall();
             }
             else{
                 return parseVarAssign();
             }
 
         }
-        if(nxtToken == KeywordToken.FUNCTION){
+        else if(nxtToken == KeywordToken.FUNCTION){
             // FunctionDef
             return parseFunctionDef();
         }
-        if(nxtToken == KeywordToken.FOR_LOOP){
+        else if(nxtToken == KeywordToken.FOR_LOOP){
             // For loop
             return parseForLoop();
         }
-        if(nxtToken == KeywordToken.WHILE){
+        else if(nxtToken == KeywordToken.WHILE){
             // While loop
+            return parseWhileLoop();
         }
-        if(nxtToken == KeywordToken.RECORD){
+        else if(nxtToken == KeywordToken.RECORD){
             // Record
             return parseRecord();
         }
-        if(nxtToken == KeywordToken.RETURN){
+        else if(nxtToken == KeywordToken.RETURN){
             return parseReturn();
         }
-        if(nxtToken == KeywordToken.IF){
+        else if(nxtToken == KeywordToken.IF){
             return parseIfCond();
+        }
+        else if(nxtToken == KeywordToken.DELETE){
+            return parseDelete();
         }
         return null;
         //throw new ParserException("Cannot begin statement with " + nxtToken.toString());
+    }
+
+    private ASTNodes.DeleteStt parseDelete() throws ParserException {
+        readSymbol();
+        ASTNodes.DeleteStt node = new ASTNodes.DeleteStt();
+        node.toDelete = parseRefToValue();
+        return node;
+    }
+
+    private ASTNodes.ConstCreation parseConstCreation() throws ParserException {
+
+        ASTNodes.ConstCreation node = new ASTNodes.ConstCreation();
+        node.initExpr = null;
+        readSymbol();
+        if(!(nxtToken instanceof IdentifierToken)){
+            throw new ParserException("Expected identifier after keyword var, but got " + nxtToken.toString());
+        }
+        node.identifier = ((IdentifierToken) nxtToken).label;
+        readSymbol();
+        node.type = parseType();
+
+        if (nxtToken == OperatorToken.ASSIGN) {
+            readSymbol();
+            node.initExpr = parseExpression();
+        } else {
+            throw new ParserException("Const value needs to be initialized, but got " + nxtToken);
+        }
+
+        return node;
+    }
+
+    private ASTNodes.ValCreation parseValCreation() throws ParserException {
+        // ValCreation and VarCreation have the exact same parsing mechanism, so just re-use it
+        ASTNodes.ValCreation node = new ASTNodes.ValCreation();
+        ASTNodes.VarCreation sub = parseVarCreation();
+        node.identifier = sub.identifier;
+        node.type = sub.type;
+        node.valExpr = sub.varExpr;
+        return node;
     }
 
     public ASTNodes.VarCreation parseVarCreation() throws ParserException {
@@ -87,7 +138,6 @@ public class Parser {
         varCreationNode.identifier = ((IdentifierToken) nxtToken).label;
         readSymbol();
         varCreationNode.type = parseType();
-        readSymbol();
 
         if(nxtToken == SymbolToken.SEMICOLON){
             // End of var creation
@@ -141,6 +191,10 @@ public class Parser {
         System.out.println("Parsing ParamVals");
 
         ArrayList<ASTNodes.Expression> vals = new ArrayList<>();
+        if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
+            readSymbol();
+            return vals;
+        }
         while(true){
             vals.add(parseExpression());
             if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
@@ -172,11 +226,16 @@ public class Parser {
         }
         readSymbol();
         node.paramList = parseParamList();
+        node.returnType = parseType();
         if(nxtToken != SymbolToken.OPEN_CB){
-            throw new ParserException("Expected `}` after function prototype but got " + nxtToken.toString());
+            throw new ParserException("Expected `{` after function prototype but got " + nxtToken.toString());
         }
         readSymbol();
         node.functionCode = parseCode();
+        if(nxtToken != SymbolToken.CLOSE_CB){
+            throw new ParserException("Expected `}` after function code but got " + nxtToken.toString());
+        }
+        readSymbol();
         return node;
     }
 
@@ -184,6 +243,10 @@ public class Parser {
         System.out.println("Parsing ParamList");
 
         ArrayList<ASTNodes.Param> params = new ArrayList<>();
+        if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
+            readSymbol();
+            return params;
+        }
         while(true){
             ASTNodes.Param p = new ASTNodes.Param();
             if( !(nxtToken instanceof IdentifierToken)){
@@ -204,6 +267,22 @@ public class Parser {
             readSymbol();
         }
         return params;
+    }
+
+    private ASTNodes.WhileLoop parseWhileLoop() throws ParserException {
+        // while token in nxtToken
+        ASTNodes.WhileLoop node = new ASTNodes.WhileLoop();
+        readSymbol();
+        node.condition = parseExpression();
+        if(nxtToken != SymbolToken.OPEN_CB){
+            throw new ParserException("Expected { after while loop condition but got " + nxtToken);
+        }
+        readSymbol();
+        node.codeBlock = parseCode();
+        if(nxtToken != SymbolToken.CLOSE_CB){
+            throw new ParserException("Expected } after while loop codeblock but got " + nxtToken);
+        }
+        return node;
     }
 
     public ASTNodes.ForLoop parseForLoop() throws ParserException {
@@ -231,13 +310,13 @@ public class Parser {
         }
         readSymbol();
         node.increment = parseExpression();
-        readSymbol();
+
         if(nxtToken != SymbolToken.OPEN_CB){
             throw new ParserException("Expected symbol `{` after for loop to start code block but got " + nxtToken);
         }
         readSymbol();
         node.codeBlock = parseCode();
-        readSymbol();
+
         if(nxtToken != SymbolToken.CLOSE_CB){
             throw new ParserException("Expected symbol `}` to finish codeblock of for loop but got " + nxtToken);
         }
@@ -272,6 +351,9 @@ public class Parser {
         System.out.println("Parsing recordvars");
         ArrayList<ASTNodes.RecordVar> vars = new ArrayList<>();
         while(true){
+            while(nxtToken == SymbolToken.SEMICOLON) {
+                readSymbol();
+            }
             if(!(nxtToken instanceof IdentifierToken)){
                 break;
             }
@@ -279,10 +361,10 @@ public class Parser {
             var.identifier = ((IdentifierToken) nxtToken).label;
             readSymbol();
             var.type = parseType();
-            if(nxtToken != SymbolToken.SEMICOLON){
+            /*if(nxtToken != SymbolToken.SEMICOLON){
                 throw new ParserException("Expected `;` after record parameter definition, but got " + nxtToken);
             }
-            readSymbol();
+            readSymbol();*/
             vars.add(var);
         }
         return vars;
@@ -293,10 +375,9 @@ public class Parser {
         readSymbol();
         ASTNodes.ReturnExpr node = new ASTNodes.ReturnExpr();
         node.expr = parseExpression();
-        readSymbol();
-        if(nxtToken != SymbolToken.SEMICOLON){
+        /*if(nxtToken != SymbolToken.SEMICOLON){
             throw new ParserException("Expected `;` after return statement but got " + nxtToken);
-        }
+        }*/
         return node;
     }
 
@@ -356,10 +437,10 @@ public class Parser {
             node.value = parseExpression();
         }
 
-        if(nxtToken != SymbolToken.SEMICOLON){
+        /*if(nxtToken != SymbolToken.SEMICOLON){
             throw new ParserException("Expected semicolon after var assign but got " + nxtToken);
         }
-        readSymbol();
+        readSymbol();*/
 
 
         return node;
@@ -485,14 +566,14 @@ public class Parser {
             ASTNodes.Expression nxt;
             if(nxtToken == OperatorToken.PLUS){
                 readSymbol();
-                nxt = new ASTNodes.MultExpr();
-                ((ASTNodes.MultExpr) nxt).expr1 = curr;
-                ((ASTNodes.MultExpr) nxt).expr2 = parseMultMod();
+                nxt = new ASTNodes.AddExpr();
+                ((ASTNodes.AddExpr) nxt).expr1 = curr;
+                ((ASTNodes.AddExpr) nxt).expr2 = parseMultMod();
             } else if(nxtToken == OperatorToken.MINUS){
                 readSymbol();
-                nxt = new ASTNodes.DivExpr();
-                ((ASTNodes.DivExpr) nxt).expr1 = curr;
-                ((ASTNodes.DivExpr) nxt).expr2 = parseMultMod();
+                nxt = new ASTNodes.SubExpr();
+                ((ASTNodes.SubExpr) nxt).expr1 = curr;
+                ((ASTNodes.SubExpr) nxt).expr2 = parseMultMod();
             } else {
                 return curr;
             }
@@ -599,9 +680,30 @@ public class Parser {
         throw new ParserException("Couldn't parse expression with term starting with " + nxtToken);
     }
 
-    private ASTNodes.Expression parseArrayCreation() {
-        // TODO
-        return null;
+    private ASTNodes.Expression parseArrayCreation() throws ParserException {
+        // Should have TypeToken in nxtSymbol
+        ASTNodes.ArrayCreation node = new ASTNodes.ArrayCreation();
+        node.typeIdentifier = ((TypeToken) nxtToken).label;
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_BRACKET){
+            throw new ParserException("Expected [ after type for array creation in expression but got " + nxtToken);
+        }
+        readSymbol();
+        if(nxtToken != SymbolToken.CLOSE_BRACKET){
+            throw new ParserException("Expected ] after type for array creation in expression but got " + nxtToken);
+        }
+        readSymbol();
+        if(nxtToken != SymbolToken.OPEN_PARENTHESIS){
+            throw new ParserException("Expected ( after type[] for array creation in expression but got " + nxtToken);
+        }
+        readSymbol();
+        node.arraySize = parseExpression();
+
+        if(nxtToken != SymbolToken.CLOSE_PARENTHESIS){
+            throw new ParserException("Expected ) after size for array creation in expression but got " + nxtToken);
+        }
+        readSymbol();
+        return node;
     }
 
 

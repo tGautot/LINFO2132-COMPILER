@@ -11,5 +11,5 @@ public class Charsets {
             "=+-/*.,;%<>(){}[]\\\"";
 
     public static final String whitespaces =
-            " \t\n";
+            " \t\n\r";
 }

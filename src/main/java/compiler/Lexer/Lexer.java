@@ -149,7 +149,7 @@ public class Lexer {
                     }
                 }
 
-                throw new InvalidTokenException("No token starting with char " + nxt);
+                throw new InvalidTokenException("No token starting with char " + nxt + "(first char code :" + ((int) nxt.toString().charAt(0)) + ")");
 
             } catch (IOException | InvalidTokenException e) {
                 throw new RuntimeException(e);

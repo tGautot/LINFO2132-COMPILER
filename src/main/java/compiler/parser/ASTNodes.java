@@ -40,6 +40,7 @@ public class ASTNodes {
 
     static public class FunctionDef extends Statement {
         String identifier;
+        Type returnType;
         ArrayList<Param> paramList;
         StatementList functionCode;
 
@@ -47,6 +48,7 @@ public class ASTNodes {
         public String toString() {
             return "FunctionDef{" + "\n" +
                     "identifier='" + identifier + '\'' + "\n" +
+                    "returnType=" + returnType + "\n" +
                     ", paramList=" + paramList + "\n" +
                     ", functionCode=" + functionCode + "\n" +
                     '}';
