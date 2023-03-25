@@ -895,8 +895,9 @@ public class ASTNodes {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            EqComp eqComp = (EqComp) o;
-            return Objects.equals(expr1, eqComp.expr1) && Objects.equals(expr2, eqComp.expr2);
+            System.out.println(getClass() + " --o: " + o.getClass());
+            Comparison comp = (Comparison) o;
+            return Objects.equals(expr1, comp.expr1) && Objects.equals(expr2, comp.expr2);
         }
 
         @Override
@@ -906,6 +907,14 @@ public class ASTNodes {
     }
     // a==b
     static public class EqComp extends Comparison {
+
+        public EqComp() {
+        }
+
+        public EqComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
+
         @Override
         public String toString() {
             return expr1 + " == " + expr2;
@@ -913,6 +922,15 @@ public class ASTNodes {
     }
     // a<>b
     static public class NotEqComp extends Comparison {
+
+        public NotEqComp() {
+        }
+
+        public NotEqComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
+
+
         @Override
         public String toString() {
             return expr1 + " <> " + expr2;
@@ -920,6 +938,14 @@ public class ASTNodes {
     }
     // a>=b
     static public class GrEqComp extends Comparison {
+
+        public GrEqComp() {
+        }
+
+        public GrEqComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
+
         @Override
         public String toString() {
             return expr1 + " >= " + expr2;
@@ -927,6 +953,13 @@ public class ASTNodes {
     }
     // a<=b
     static public class SmEqComp extends Comparison {
+
+        public SmEqComp() {
+        }
+
+        public SmEqComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
 
         @Override
         public String toString() {
@@ -937,6 +970,13 @@ public class ASTNodes {
     // a>b
     static public class GrComp extends Comparison {
 
+        public GrComp() {
+        }
+
+        public GrComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
+
         @Override
         public String toString() {
             return expr1 + " > " + expr2;
@@ -946,6 +986,13 @@ public class ASTNodes {
     // a<b
     static public class SmComp extends Comparison {
 
+        public SmComp() {
+        }
+
+        public SmComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
+
         @Override
         public String toString() {
             return expr1 + " < " + expr2;
@@ -954,6 +1001,13 @@ public class ASTNodes {
     }
     static public class AndComp extends Comparison {
 
+        public AndComp() {
+        }
+
+        public AndComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
+
         @Override
         public String toString() {
             return expr1 + " and " + expr2;
@@ -961,6 +1015,13 @@ public class ASTNodes {
     }
 
     static public class OrComp extends Comparison {
+
+        public OrComp() {
+        }
+
+        public OrComp(Expression expr1, Expression expr2) {
+            super(expr1, expr2);
+        }
 
         @Override
         public String toString() {

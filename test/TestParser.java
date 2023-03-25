@@ -114,6 +114,7 @@ public class TestParser {
 
         ASTNodes.Type tInt= new ASTNodes.Type("int", false);
         ASTNodes.Type tReal= new ASTNodes.Type("real", false);
+        ASTNodes.Type tString= new ASTNodes.Type("string", false);
 
 
         // aaa = 16;
@@ -150,6 +151,53 @@ public class TestParser {
 
         expected.add(c);
 
+        // ddd = -arr[sqrt(49)]%(2*-3*--4);
+        ASTNodes.DirectValue val49 = new ASTNodes.DirectValue("49", tInt);
+        ArrayList<ASTNodes.Expression> sqrtParams = new ArrayList<>();
+        sqrtParams.add(val49);
+        ASTNodes.FunctionCall sqrtCall = new ASTNodes.FunctionCall("sqrt", sqrtParams);
+        ASTNodes.ArrayAccessFromId arr = new ASTNodes.ArrayAccessFromId("arr", sqrtCall);
+        ASTNodes.NegateExpr negArr = new ASTNodes.NegateExpr(arr);
+        ASTNodes.DirectValue val2 = new ASTNodes.DirectValue("2", tInt);
+        ASTNodes.DirectValue val3 = new ASTNodes.DirectValue("3", tInt);
+        ASTNodes.DirectValue val4 = new ASTNodes.DirectValue("4", tInt);
+        ASTNodes.NegateExpr neg3 = new ASTNodes.NegateExpr(val3);
+        ASTNodes.NegateExpr neg4 = new ASTNodes.NegateExpr(val4);
+        ASTNodes.NegateExpr negNeg4 = new ASTNodes.NegateExpr(neg4);
+        ASTNodes.MultExpr mult1 = new ASTNodes.MultExpr(val2, neg3);
+        ASTNodes.MultExpr mult2 = new ASTNodes.MultExpr(mult1, negNeg4);
+        ASTNodes.ModExpr topMod = new ASTNodes.ModExpr(negArr, mult2);
+
+        ASTNodes.DirectVarAssign d = new ASTNodes.DirectVarAssign(topMod, "ddd");
+
+        expected.add(d);
+
+        // eee = 6==7 and sqrt(64)<>sqrt(81) or "Hello"+3 ;
+        ASTNodes.DirectValue valHello = new ASTNodes.DirectValue("Hello", tString);
+        ASTNodes.DirectValue val81 = new ASTNodes.DirectValue("81", tInt);
+        ASTNodes.DirectValue val64 = new ASTNodes.DirectValue("64", tInt);
+        ASTNodes.DirectValue val6 = new ASTNodes.DirectValue("6", tInt);
+        ASTNodes.DirectValue val7 = new ASTNodes.DirectValue("7", tInt);
+
+        ASTNodes.EqComp sixEqSeven = new ASTNodes.EqComp(val6, val7);
+
+        ArrayList<ASTNodes.Expression> paramSqrt64 = new ArrayList<>();
+        paramSqrt64.add(val64);
+        ArrayList<ASTNodes.Expression> paramSqrt81 = new ArrayList<>();
+        paramSqrt81.add(val81);
+        ASTNodes.FunctionCall sqrt64 = new ASTNodes.FunctionCall("sqrt", paramSqrt64);
+        ASTNodes.FunctionCall sqrt81 = new ASTNodes.FunctionCall("sqrt", paramSqrt81);
+        ASTNodes.NotEqComp sqrtDiffSqrt = new ASTNodes.NotEqComp(sqrt64, sqrt81);
+
+        ASTNodes.AndComp andComp = new ASTNodes.AndComp(sixEqSeven, sqrtDiffSqrt);
+
+        ASTNodes.AddExpr addHello3 = new ASTNodes.AddExpr(valHello, val3);
+        ASTNodes.OrComp orComp = new ASTNodes.OrComp(andComp, addHello3);
+
+        ASTNodes.DirectVarAssign e = new ASTNodes.DirectVarAssign(orComp, "eee");
+        expected.add(e);
+
+
         for(int i = 0; i < expected.size(); i++){
             ASTNodes.Statement expct = expected.get(i);
             ASTNodes.Statement got = sl.statements.get(i);
@@ -157,7 +205,7 @@ public class TestParser {
         }
 
         System.out.println("RESULT:");
-        System.out.println(sl.toString());
+        System.out.println(sl);
     }
 
 
