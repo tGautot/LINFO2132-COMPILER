@@ -1,3 +1,4 @@
+import com.google.errorprone.annotations.Var;
 import compiler.Lexer.*;
 import compiler.parser.ASTNodes;
 import compiler.parser.Parser;
@@ -16,7 +17,7 @@ public class TestParser {
 
 
     @Test
-    public void testEmptyFunc() {
+    public void testBasicFunc() {
         String input = "proc myfunc(a int, b real[], c bool) int {" +
                 "return a*b" +
                 "}";
@@ -355,6 +356,58 @@ public class TestParser {
             throw new RuntimeException(e);
         }
         assertTrue(true);
+    }
+
+    @Test
+    public void testLoops() {
+        String input = "for i=1 to 100 by 2 {\n" +
+                "        while value<>3 {\n" +
+                "            b = b + 5\n" +
+                "        }\n" +
+                "    }";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        ASTNodes.Type tInt = new ASTNodes.Type("int", false);
+        ASTNodes.DirectValue val1 = new ASTNodes.DirectValue("1", tInt);
+        ASTNodes.DirectValue val2 = new ASTNodes.DirectValue("2", tInt);
+        ASTNodes.DirectValue val3 = new ASTNodes.DirectValue("3", tInt);
+        ASTNodes.DirectValue val5 = new ASTNodes.DirectValue("5", tInt);
+        ASTNodes.DirectValue val100 = new ASTNodes.DirectValue("100", tInt);
+        ASTNodes.Identifier bId = new ASTNodes.Identifier("b");
+        ASTNodes.Identifier iId = new ASTNodes.Identifier("i");
+        ASTNodes.Identifier valueId = new ASTNodes.Identifier("value");
+
+        ArrayList<ASTNodes.Statement> expected = new ArrayList<>();
+
+        ArrayList<ASTNodes.Statement> wlCode = new ArrayList<>();
+        wlCode.add(new ASTNodes.VarAssign(bId, new ASTNodes.AddExpr(bId, val5)));
+        ASTNodes.StatementList wlSL = new ASTNodes.StatementList();
+        wlSL.statements = wlCode;
+        ASTNodes.Expression wlCondition = new ASTNodes.NotEqComp(valueId, val3);
+        ASTNodes.WhileLoop whileLoop = new ASTNodes.WhileLoop(wlCondition, wlSL);
+
+        ArrayList<ASTNodes.Statement> flCode = new ArrayList<>();
+        flCode.add(whileLoop);
+        ASTNodes.StatementList flSL = new ASTNodes.StatementList();
+        flSL.statements = flCode;
+
+        ASTNodes.ForLoop forLoop = new ASTNodes.ForLoop(iId, val1, val100, val2, flSL);
+        expected.add(forLoop);
+
+        for(int i = 0; i < expected.size(); i++){
+            ASTNodes.Statement expct = expected.get(i);
+            ASTNodes.Statement got = sl.statements.get(i);
+            assertEquals(expct, got);
+        }
+
     }
 
 }
