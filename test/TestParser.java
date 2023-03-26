@@ -1,6 +1,3 @@
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import compiler.Lexer.*;
 import compiler.parser.ASTNodes;
 import compiler.parser.Parser;
@@ -13,12 +10,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
+import static org.junit.Assert.*;
+
 public class TestParser {
 
 
     @Test
     public void testEmptyFunc() {
-        String input = "proc myfunc(a int, b real[], c bool){}";
+        String input = "proc myfunc(a int, b real[], c bool) int {" +
+                "return a*b" +
+                "}";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
@@ -28,8 +29,70 @@ public class TestParser {
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("RESULT:");
-        System.out.println(sl.toString());
+
+        ASTNodes.Type tInt = new ASTNodes.Type("int", false);
+        ASTNodes.Type tRealArr = new ASTNodes.Type("real", true);
+        ASTNodes.Type tBool = new ASTNodes.Type("bool", false);
+
+        ArrayList<ASTNodes.Statement> expected = new ArrayList<>();
+
+
+
+
+        ASTNodes.StatementList functionSl = new ASTNodes.StatementList();
+        ArrayList<ASTNodes.Statement> code = new ArrayList<>();
+        code.add(new ASTNodes.ReturnExpr(new ASTNodes.MultExpr(
+                new ASTNodes.Identifier("a"),
+                new ASTNodes.Identifier("b")
+        )));
+        functionSl.statements = code;
+        ArrayList<ASTNodes.Param> params = new ArrayList<>();
+        params.add(new ASTNodes.Param(tInt, "a"));
+        params.add(new ASTNodes.Param(tRealArr, "b"));
+        params.add(new ASTNodes.Param(tBool, "c"));
+        ASTNodes.FunctionDef fDef = new ASTNodes.FunctionDef("myfunc", tInt, params, functionSl);
+
+        expected.add(fDef);
+
+        for(int i = 0; i < expected.size(); i++){
+            ASTNodes.Statement expct = expected.get(i);
+            ASTNodes.Statement got = sl.statements.get(i);
+            assertEquals(expct, got);
+        }
+
+    }
+
+    @Test
+    public void testNoSemicolon() {
+        String input1 = "var a int = 3 var b bool if a == 3 { b = true } else { b = 6*7*8==8*7*6 and sqrt(49) == sqrt(49) a = 555 } printf(b)";
+        StringReader reader1 = new StringReader(input1);
+        Lexer lexer1 = new Lexer(reader1);
+        Parser parser1 = new Parser(lexer1);
+
+        String input2 = "var a int = 3;" +
+                "var b bool;" +
+                "if a == 3 { " +
+                "   b = true; " +
+                "} else { " +
+                "   b = 6*7*8==8*7*6 and sqrt(49) == sqrt(49);" +
+                "   a = 555;" +
+                "}" +
+                "printf(b);";
+        StringReader reader2 = new StringReader(input2);
+        Lexer lexer2 = new Lexer(reader2);
+        Parser parser2 = new Parser(lexer2);
+        ArrayList<ASTNodes.Statement> sl1 = null, sl2 = null;
+        try {
+            sl1 = parser1.parseCode().statements;
+            sl2 = parser2.parseCode().statements;
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        assertEquals(sl1.size(), sl2.size());
+        for(int i = 0; i < sl1.size(); i++){
+            assertEquals(sl1.get(i), sl2.get(i));
+        }
         //assertNotNull(nxtSymbol);
 
     }
@@ -55,8 +118,35 @@ public class TestParser {
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("RESULT:");
-        System.out.println(sl.toString());
+
+        ASTNodes.Type tInt = new ASTNodes.Type("int", false);
+        ASTNodes.Type tString = new ASTNodes.Type("string", false);
+        ASTNodes.Type tPoint = new ASTNodes.Type("Point", false);
+        ASTNodes.Type tReal = new ASTNodes.Type("real", false);
+        ASTNodes.Type tIntArr = new ASTNodes.Type("int", true);
+
+        ArrayList<ASTNodes.Statement> expected = new ArrayList<>();
+
+        ArrayList<ASTNodes.RecordVar> pointVars = new ArrayList<>();
+        pointVars.add(new ASTNodes.RecordVar("x", tReal));
+        pointVars.add(new ASTNodes.RecordVar("y", tReal));
+
+        ArrayList<ASTNodes.RecordVar> personVars = new ArrayList<>();
+        personVars.add(new ASTNodes.RecordVar("name", tString));
+        personVars.add(new ASTNodes.RecordVar("location", tPoint));
+        personVars.add(new ASTNodes.RecordVar("history", tIntArr));
+
+        ASTNodes.Record pointDef = new ASTNodes.Record("Point", pointVars);
+        ASTNodes.Record personDef = new ASTNodes.Record("Person", personVars);
+
+        expected.add(pointDef);
+        expected.add(personDef);
+
+        for(int i = 0; i < expected.size(); i++){
+            ASTNodes.Statement expct = expected.get(i);
+            ASTNodes.Statement got = sl.statements.get(i);
+            assertEquals(expct, got);
+        }
     }
 
     @Test
@@ -71,8 +161,25 @@ public class TestParser {
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("RESULT:");
-        System.out.println(sl.toString());
+
+        ASTNodes.DirectValue val3 = new ASTNodes.DirectValue("3", new ASTNodes.Type("int", false));
+        ASTNodes.RefToValue expected = new ASTNodes.ObjectAccess(
+                new ASTNodes.ObjectAccess(
+                        new ASTNodes.ArrayAccess(
+                                new ASTNodes.ObjectAccess(
+                                        new ASTNodes.ObjectAccess(
+                                                new ASTNodes.Identifier("zzz"),
+                                                "yyy"
+                                        ),
+                                        "xxx"
+                                ), val3
+                        ),
+                        "bbb"
+                ),
+                "ccc"
+        );
+
+        assertEquals(expected, sl);
     }
 
     @Test
@@ -87,8 +194,33 @@ public class TestParser {
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("RESULT:");
-        System.out.println(sl.toString());
+
+        ArrayList<ASTNodes.Statement> expected = new ArrayList<>();
+
+
+        ASTNodes.DirectValue val3 = new ASTNodes.DirectValue("3", new ASTNodes.Type("int", false));
+        ASTNodes.DirectValue val2 = new ASTNodes.DirectValue("2", new ASTNodes.Type("int", false));
+        ASTNodes.DirectValue val16 = new ASTNodes.DirectValue("16", new ASTNodes.Type("int", false));
+
+        ASTNodes.RefToValue ref1 = new ASTNodes.ArrayAccess(
+                new ASTNodes.ObjectAccess(
+                        new ASTNodes.ObjectAccess(
+                                new ASTNodes.Identifier("zzz"),
+                                "yyy"
+                        ),
+                        "xxx"
+                ), val3
+        );
+
+        expected.add(new ASTNodes.VarAssign(ref1, val2));
+        expected.add(new ASTNodes.VarAssign( new ASTNodes.Identifier("aaa"), val16));
+
+        for(int i = 0; i < expected.size(); i++){
+            ASTNodes.Statement expct = expected.get(i);
+            ASTNodes.Statement got = sl.statements.get(i);
+            assertEquals(expct, got);
+        }
+
     }
 
 
@@ -120,7 +252,7 @@ public class TestParser {
         // aaa = 16;
 
         ASTNodes.DirectValue val16 = new ASTNodes.DirectValue("16", tInt);
-        ASTNodes.DirectVarAssign a = new ASTNodes.DirectVarAssign(val16, "aaa");
+        ASTNodes.VarAssign a = new ASTNodes.VarAssign(new ASTNodes.Identifier("aaa"), val16);
         expected.add(a);
 
         // bbb[5] = 17+8;
@@ -130,13 +262,13 @@ public class TestParser {
         ASTNodes.DirectValue val8p5 = new ASTNodes.DirectValue("8.5", tReal);
         ASTNodes.AddExpr bExpr = new ASTNodes.AddExpr(val17, val8p5);
         ASTNodes.DirectValue val5 = new ASTNodes.DirectValue("5", tInt);
-        ASTNodes.ArrayAccessFromId ref = new ASTNodes.ArrayAccessFromId("bbb", val5);
-        ASTNodes.RefVarAssign b = new ASTNodes.RefVarAssign(bExpr, ref);
+        ASTNodes.ArrayAccess ref = new ASTNodes.ArrayAccess(new ASTNodes.Identifier("bbb"), val5);
+        ASTNodes.VarAssign b = new ASTNodes.VarAssign(ref, bExpr);
 
         expected.add(b);
 
         // ccc.xxx = -(18+9)*-5;
-        ASTNodes.ObjectAccessFromId refC = new ASTNodes.ObjectAccessFromId("ccc", "xxx");
+        ASTNodes.ObjectAccess refC = new ASTNodes.ObjectAccess(new ASTNodes.Identifier("ccc"), "xxx");
         ASTNodes.NegateExpr neg5 = new ASTNodes.NegateExpr(val5);
 
         ASTNodes.DirectValue val18 = new ASTNodes.DirectValue("18", tInt);
@@ -147,7 +279,7 @@ public class TestParser {
 
         ASTNodes.MultExpr topExpr = new ASTNodes.MultExpr(negSum18p9, neg5);
 
-        ASTNodes.RefVarAssign c = new ASTNodes.RefVarAssign(topExpr, refC);
+        ASTNodes.VarAssign c = new ASTNodes.VarAssign(refC, topExpr);
 
         expected.add(c);
 
@@ -156,7 +288,7 @@ public class TestParser {
         ArrayList<ASTNodes.Expression> sqrtParams = new ArrayList<>();
         sqrtParams.add(val49);
         ASTNodes.FunctionCall sqrtCall = new ASTNodes.FunctionCall("sqrt", sqrtParams);
-        ASTNodes.ArrayAccessFromId arr = new ASTNodes.ArrayAccessFromId("arr", sqrtCall);
+        ASTNodes.ArrayAccess arr = new ASTNodes.ArrayAccess(new ASTNodes.Identifier("arr"), sqrtCall);
         ASTNodes.NegateExpr negArr = new ASTNodes.NegateExpr(arr);
         ASTNodes.DirectValue val2 = new ASTNodes.DirectValue("2", tInt);
         ASTNodes.DirectValue val3 = new ASTNodes.DirectValue("3", tInt);
@@ -168,7 +300,7 @@ public class TestParser {
         ASTNodes.MultExpr mult2 = new ASTNodes.MultExpr(mult1, negNeg4);
         ASTNodes.ModExpr topMod = new ASTNodes.ModExpr(negArr, mult2);
 
-        ASTNodes.DirectVarAssign d = new ASTNodes.DirectVarAssign(topMod, "ddd");
+        ASTNodes.VarAssign d = new ASTNodes.VarAssign(new ASTNodes.Identifier("ddd"), topMod );
 
         expected.add(d);
 
@@ -194,7 +326,7 @@ public class TestParser {
         ASTNodes.AddExpr addHello3 = new ASTNodes.AddExpr(valHello, val3);
         ASTNodes.OrComp orComp = new ASTNodes.OrComp(andComp, addHello3);
 
-        ASTNodes.DirectVarAssign e = new ASTNodes.DirectVarAssign(orComp, "eee");
+        ASTNodes.VarAssign e = new ASTNodes.VarAssign(new ASTNodes.Identifier("eee"), orComp    );
         expected.add(e);
 
 
@@ -204,13 +336,12 @@ public class TestParser {
             assertEquals(expct, got);
         }
 
-        System.out.println("RESULT:");
-        System.out.println(sl);
     }
 
 
     @Test
     public void testCodeExample() throws IOException {
+        // This test is considered valid if the parser doesn't crash
         Path filePath = Path.of("./test/simple_code.txt");
 
         String input = Files.readString(filePath);
@@ -223,8 +354,7 @@ public class TestParser {
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("RESULT:");
-        System.out.println(sl.toString());
+        assertTrue(true);
     }
 
 }

@@ -28,19 +28,20 @@ public class Lexer {
                 if(Charsets.whitespaces.contains(nxt.toString())) continue;
 
                 if(Charsets.symbols.contains(nxt.toString())){
-                    if(nxt.toString().equals("+")) return OperatorToken.PLUS;
-                    if(nxt.toString().equals("-")) return OperatorToken.MINUS;
-                    if(nxt.toString().equals("*")) return OperatorToken.TIMES;
-                    if(nxt.toString().equals("%")) return OperatorToken.MODULUS;
-                    if(nxt.toString().equals(",")) return SymbolToken.COMMA;
-                    if(nxt.toString().equals(";")) return SymbolToken.SEMICOLON;
-                    if(nxt.toString().equals(".")) return SymbolToken.DOT;
-                    if(nxt.toString().equals("(")) return SymbolToken.OPEN_PARENTHESIS;
-                    if(nxt.toString().equals(")")) return SymbolToken.CLOSE_PARENTHESIS;
-                    if(nxt.toString().equals("[")) return SymbolToken.OPEN_BRACKET;
-                    if(nxt.toString().equals("]")) return SymbolToken.CLOSE_BRACKET;
-                    if(nxt.toString().equals("{")) return SymbolToken.OPEN_CB;
-                    if(nxt.toString().equals("}")) return SymbolToken.CLOSE_CB;
+                    String nxtString = nxt.toString();
+                    if(nxtString.equals("+")) return OperatorToken.PLUS;
+                    if(nxtString.equals("-")) return OperatorToken.MINUS;
+                    if(nxtString.equals("*")) return OperatorToken.TIMES;
+                    if(nxtString.equals("%")) return OperatorToken.MODULUS;
+                    if(nxtString.equals(",")) return SymbolToken.COMMA;
+                    if(nxtString.equals(";")) return SymbolToken.SEMICOLON;
+                    if(nxtString.equals(".")) return SymbolToken.DOT;
+                    if(nxtString.equals("(")) return SymbolToken.OPEN_PARENTHESIS;
+                    if(nxtString.equals(")")) return SymbolToken.CLOSE_PARENTHESIS;
+                    if(nxtString.equals("[")) return SymbolToken.OPEN_BRACKET;
+                    if(nxtString.equals("]")) return SymbolToken.CLOSE_BRACKET;
+                    if(nxtString.equals("{")) return SymbolToken.OPEN_CB;
+                    if(nxtString.equals("}")) return SymbolToken.CLOSE_CB;
 
                     if(nxt.toString().equals("\"")){ // Is a string value
                         char nxtChar;

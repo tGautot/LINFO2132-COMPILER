@@ -280,73 +280,16 @@ public class ASTNodes {
         }
     }
 
-    static public abstract class VarAssign extends Statement{
+    static public class VarAssign extends Statement{
+        public RefToValue ref;
         public Expression value;
 
         public VarAssign() {
         }
 
-        public VarAssign(Expression value) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            VarAssign varAssign = (VarAssign) o;
-            return Objects.equals(value, varAssign.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-    }
-
-    static public class DirectVarAssign extends VarAssign{
-        public String identifier;
-
-        public DirectVarAssign() {
-        }
-
-        public DirectVarAssign(Expression value, String identifier) {
-            super(value);
-            this.identifier = identifier;
-        }
-
-        @Override
-        public String toString() {
-            return "DirectVarAssign{" + "\n" +
-                    "identifier='" + identifier + '\'' + "\n" +
-                    ", value=" + value + "\n" +
-                    '}';
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            DirectVarAssign that = (DirectVarAssign) o;
-            return Objects.equals(identifier, that.identifier);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), identifier);
-        }
-    }
-
-    static public class RefVarAssign extends VarAssign{
-        public RefToValue ref;
-
-        public RefVarAssign() {
-        }
-
-        public RefVarAssign(Expression value, RefToValue ref) {
-            super(value);
+        public VarAssign(RefToValue ref, Expression value) {
             this.ref = ref;
+            this.value = value;
         }
 
         @Override
@@ -361,8 +304,7 @@ public class ASTNodes {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            RefVarAssign that = (RefVarAssign) o;
+            VarAssign that = (VarAssign) o;
             return Objects.equals(ref, that.ref);
         }
 
@@ -503,7 +445,7 @@ public class ASTNodes {
     }
 
     static public class ForLoop extends Statement {
-        String loopVarIdentifier;
+        RefToValue loopVal;
         Expression initValExpr;
         Expression endValExpr;
         Expression increment;
@@ -512,8 +454,8 @@ public class ASTNodes {
         public ForLoop() {
         }
 
-        public ForLoop(String loopVarIdentifier, Expression initValExpr, Expression endValExpr, Expression increment, StatementList codeBlock) {
-            this.loopVarIdentifier = loopVarIdentifier;
+        public ForLoop(RefToValue loopVal, Expression initValExpr, Expression endValExpr, Expression increment, StatementList codeBlock) {
+            this.loopVal = loopVal;
             this.initValExpr = initValExpr;
             this.endValExpr = endValExpr;
             this.increment = increment;
@@ -523,7 +465,7 @@ public class ASTNodes {
         @Override
         public String toString() {
             return "ForLoop{" + "\n" +
-                    "loopVarIdentifier='" + loopVarIdentifier + '\'' + "\n" +
+                    "loopVal='" + loopVal + '\'' + "\n" +
                     ", initValExpr=" + initValExpr + "\n" +
                     ", endValExpr=" + endValExpr + "\n" +
                     ", increment=" + increment + "\n" +
@@ -536,12 +478,12 @@ public class ASTNodes {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ForLoop forLoop = (ForLoop) o;
-            return Objects.equals(loopVarIdentifier, forLoop.loopVarIdentifier) && Objects.equals(initValExpr, forLoop.initValExpr) && Objects.equals(endValExpr, forLoop.endValExpr) && Objects.equals(increment, forLoop.increment) && Objects.equals(codeBlock, forLoop.codeBlock);
+            return Objects.equals(loopVal, forLoop.loopVal) && Objects.equals(initValExpr, forLoop.initValExpr) && Objects.equals(endValExpr, forLoop.endValExpr) && Objects.equals(increment, forLoop.increment) && Objects.equals(codeBlock, forLoop.codeBlock);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(loopVarIdentifier, initValExpr, endValExpr, increment, codeBlock);
+            return Objects.hash(loopVal, initValExpr, endValExpr, increment, codeBlock);
         }
     }
     static public class WhileLoop extends Statement {
@@ -613,36 +555,7 @@ public class ASTNodes {
         @Override
         public abstract String toString();
     }
-    static public class Identifier extends Expression{
-        String id;
 
-        public Identifier() {
-        }
-
-        public Identifier(String id) {
-            this.id = id;
-        }
-
-        @Override
-        public String toString() {
-            return "Identifier{" +
-                    "id='" + id + '\'' +
-                    '}';
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Identifier that = (Identifier) o;
-            return Objects.equals(id, that.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
-    }
     public static class DirectValue extends Expression {
         public String value;
         public Type type;
@@ -678,23 +591,20 @@ public class ASTNodes {
     }
     static public abstract class RefToValue extends  Expression {
     }
-    static public class ObjectAccessFromId extends RefToValue {
-        public String identifier;
-        public String accessIdentifier;
+    static public class Identifier extends RefToValue{
+        String id;
 
-        public ObjectAccessFromId() {
+        public Identifier() {
         }
 
-        public ObjectAccessFromId(String identifier, String accessIdentifier) {
-            this.identifier = identifier;
-            this.accessIdentifier = accessIdentifier;
+        public Identifier(String id) {
+            this.id = id;
         }
 
         @Override
         public String toString() {
-            return "ObjectAccessFromId{" + "\n" +
-                    "identifier='" + identifier + '\'' + "\n" +
-                    ", accessIdentifier='" + accessIdentifier + '\'' + "\n" +
+            return "Identifier{" +
+                    "id='" + id + '\'' +
                     '}';
         }
 
@@ -702,23 +612,23 @@ public class ASTNodes {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ObjectAccessFromId that = (ObjectAccessFromId) o;
-            return Objects.equals(identifier, that.identifier) && Objects.equals(accessIdentifier, that.accessIdentifier);
+            Identifier that = (Identifier) o;
+            return Objects.equals(id, that.id);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(identifier, accessIdentifier);
+            return Objects.hash(id);
         }
     }
-    static public class ObjectAccessFromRef extends RefToValue {
+    static public class ObjectAccess extends RefToValue {
         public RefToValue object;
         public String accessIdentifier;
 
-        public ObjectAccessFromRef() {
+        public ObjectAccess() {
         }
 
-        public ObjectAccessFromRef(RefToValue object, String accessIdentifier) {
+        public ObjectAccess(RefToValue object, String accessIdentifier) {
             this.object = object;
             this.accessIdentifier = accessIdentifier;
         }
@@ -735,7 +645,7 @@ public class ASTNodes {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ObjectAccessFromRef that = (ObjectAccessFromRef) o;
+            ObjectAccess that = (ObjectAccess) o;
             return Objects.equals(object, that.object) && Objects.equals(accessIdentifier, that.accessIdentifier);
         }
 
@@ -744,47 +654,14 @@ public class ASTNodes {
             return Objects.hash(object, accessIdentifier);
         }
     }
-    static public class ArrayAccessFromId extends RefToValue {
-        public String arrayId;
-        public Expression arrayIndex;
-
-        public ArrayAccessFromId() {
-        }
-
-        public ArrayAccessFromId(String arrayId, Expression arrayIndex) {
-            this.arrayId = arrayId;
-            this.arrayIndex = arrayIndex;
-        }
-
-        @Override
-        public String toString() {
-            return "ArrayAccessFromId{" + "\n" +
-                    "arrayId='" + arrayId + '\'' + "\n" +
-                    ", arrayIndex=" + arrayIndex + "\n" +
-                    '}';
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ArrayAccessFromId that = (ArrayAccessFromId) o;
-            return Objects.equals(arrayId, that.arrayId) && Objects.equals(arrayIndex, that.arrayIndex);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(arrayId, arrayIndex);
-        }
-    }
-    static public class ArrayAccessFromRef extends RefToValue {
+    static public class ArrayAccess extends RefToValue {
         public RefToValue ref;
         public Expression arrayIndex;
 
-        public ArrayAccessFromRef() {
+        public ArrayAccess() {
         }
 
-        public ArrayAccessFromRef(RefToValue ref, Expression arrayIndex) {
+        public ArrayAccess(RefToValue ref, Expression arrayIndex) {
             this.ref = ref;
             this.arrayIndex = arrayIndex;
         }
@@ -801,7 +678,7 @@ public class ASTNodes {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ArrayAccessFromRef that = (ArrayAccessFromRef) o;
+            ArrayAccess that = (ArrayAccess) o;
             return Objects.equals(ref, that.ref) && Objects.equals(arrayIndex, that.arrayIndex);
         }
 
@@ -895,7 +772,6 @@ public class ASTNodes {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            System.out.println(getClass() + " --o: " + o.getClass());
             Comparison comp = (Comparison) o;
             return Objects.equals(expr1, comp.expr1) && Objects.equals(expr2, comp.expr2);
         }
