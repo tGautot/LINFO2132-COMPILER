@@ -143,6 +143,7 @@ public class Lexer {
                             if(idString.equals("real")) return TypeToken.DOUBLE;
                             if(idString.equals("bool")) return TypeToken.BOOL;
                             if(idString.equals("string")) return TypeToken.STRING;
+                            if(idString.equals("void")) return TypeToken.VOID;
 
                             return new IdentifierToken(nxt.toString());
                         }

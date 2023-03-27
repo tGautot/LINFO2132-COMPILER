@@ -4,7 +4,8 @@ public enum TypeToken implements Symbol{
     INT("int"),
     DOUBLE("real"),
     BOOL("bool"),
-    STRING("string");
+    STRING("string"),
+    VOID("void");
 
 
     public final String label;
