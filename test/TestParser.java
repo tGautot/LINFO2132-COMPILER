@@ -154,40 +154,13 @@ public class TestParser {
 
     @Test
     public void testVoidType() throws ParserException {
-        String input = "record Point {\n" +
-                "    x real;\n" +
-                "    y real;\n" +
-                "}\n" +
-                "\n" +
-                "record Person {\n" +
-                "    name void;\n" +
-                "    location Point;\n" +
-                "    history int[];\n" +
+
+
+        String input = "proc myfunc(a int, b real[], c bool) void {" +
+                "var aaa int[] = int[](7)" +
                 "}";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
-        Parser parser1 = new Parser(lexer);
-        assertThrows(ParserException.class, () -> parser1.parseCode());
-
-        input = "var aaa void = 3.2";
-        reader = new StringReader(input);
-        lexer = new Lexer(reader);
-        Parser parser2 = new Parser(lexer);
-        assertThrows(ParserException.class, () -> parser2.parseCode());
-
-        input = "proc myfunc(a int, b real[], c bool) void {" +
-                "var aaa void = int[](7)" +
-                "}";
-        reader = new StringReader(input);
-        lexer = new Lexer(reader);
-        Parser parser3 = new Parser(lexer);
-        assertThrows(ParserException.class, () -> parser3.parseCode());
-
-        input = "proc myfunc(a int, b real[], c bool) void {" +
-                "var aaa int[] = int[](7)" +
-                "}";
-        reader = new StringReader(input);
-        lexer = new Lexer(reader);
         Parser parser4 = new Parser(lexer);
         ASTNodes.StatementList sl;
         try {

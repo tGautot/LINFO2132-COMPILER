@@ -49,7 +49,6 @@ public class Parser {
      * @throws ParserException from parseStatement
      */
     public ASTNodes.StatementList parseCode() throws ParserException {
-        System.out.println("Parsing code");
         ASTNodes.StatementList sl = new ASTNodes.StatementList();
         sl.statements = new ArrayList<>();
         while(true){
@@ -86,7 +85,6 @@ public class Parser {
         while (nxtToken == SymbolToken.SEMICOLON){
             readSymbol();
         }
-        System.out.println("Parsing statement " + nxtToken);
         if(nxtToken == KeywordToken.VARIABLE){
             return parseVarCreation();
         }
@@ -204,7 +202,6 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.VarCreation parseVarCreation() throws ParserException {
-        System.out.println("Parsing VarCreation");
 
         // When in here, var token is already in nxtToken
         ASTNodes.VarCreation varCreationNode = new ASTNodes.VarCreation();
@@ -240,7 +237,6 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.Type parseType() throws ParserException {
-        System.out.println("Parsing Type");
 
         if(!(nxtToken instanceof TypeToken || nxtToken instanceof IdentifierToken)){
             throw new ParserException("Expected type, but got " + nxtToken.toString());
@@ -279,7 +275,6 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.FunctionCall parseFunctionCall() throws ParserException {
-        System.out.println("Parsing FunctionCall");
 
         // Should currently have function identifier in nxtToken
         ASTNodes.FunctionCall node = new ASTNodes.FunctionCall();
@@ -298,7 +293,6 @@ public class Parser {
      * @throws ParserException
      */
     public ArrayList<ASTNodes.Expression> parseParamVals() throws ParserException {
-        System.out.println("Parsing ParamVals");
 
         ArrayList<ASTNodes.Expression> vals = new ArrayList<>();
         if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
@@ -328,7 +322,6 @@ public class Parser {
      * @throws ParserException in case of missing symbol or wrong token type
      */
     public ASTNodes.FunctionDef parseFunctionDef() throws ParserException {
-        System.out.println("Parsing FunctionDef");
 
         // Keyword proc in nxtToken
         ASTNodes.FunctionDef node = new ASTNodes.FunctionDef();
@@ -368,7 +361,6 @@ public class Parser {
      * @throws ParserException
      */
     public ArrayList<ASTNodes.Param> parseParamList() throws ParserException {
-        System.out.println("Parsing ParamList");
 
         ArrayList<ASTNodes.Param> params = new ArrayList<>();
         if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
@@ -427,7 +419,6 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.ForLoop parseForLoop() throws ParserException {
-        System.out.println("Parsing for loop");
         // nxt symbol should be `for`
         ASTNodes.ForLoop node = new ASTNodes.ForLoop();
         readSymbol();
@@ -470,7 +461,6 @@ public class Parser {
      * @throws ParserException if no record name, or missing symbol
      */
     public ASTNodes.Record parseRecord() throws ParserException {
-        System.out.println("Parsing record");
 
         ASTNodes.Record node = new ASTNodes.Record();
 
@@ -509,7 +499,6 @@ public class Parser {
      * @throws ParserException from parsing type
      */
     public ArrayList<ASTNodes.RecordVar> parseRecordVars() throws ParserException {
-        System.out.println("Parsing recordvars");
         ArrayList<ASTNodes.RecordVar> vars = new ArrayList<>();
         while(true){
             while(nxtToken == SymbolToken.SEMICOLON) {
@@ -538,7 +527,6 @@ public class Parser {
      * @throws ParserException from parsing expression
      */
     public ASTNodes.ReturnExpr parseReturn() throws ParserException {
-        System.out.println("Parsing return statement");
         readSymbol();
         ASTNodes.ReturnExpr node = new ASTNodes.ReturnExpr();
         node.expr = parseExpression();
@@ -560,7 +548,6 @@ public class Parser {
      * @throws ParserException in case of missing/wrong symbol of while parsing expression/codeblock
      */
     public ASTNodes.IfCond parseIfCond() throws ParserException {
-        System.out.println("Parsing IfCond");
         // If in nxtToken
         readSymbol();
         /*if(nxtToken != SymbolToken.OPEN_PARENTHESIS){
@@ -754,7 +741,6 @@ public class Parser {
      * @throws ParserException from parseComp
      */
     public ASTNodes.Expression parseExpression() throws ParserException {
-        System.out.println("Parsing Expression " + nxtToken);
 
         ASTNodes.Expression curr = parseComp();
 
@@ -785,7 +771,6 @@ public class Parser {
      * @throws ParserException from parseAddSub
      */
     public ASTNodes.Expression parseComp() throws ParserException{
-        System.out.println("Parsing Comp " + nxtToken);
         ASTNodes.Expression curr = parseAddSub();
 
         while(true){
@@ -835,7 +820,6 @@ public class Parser {
      * @throws ParserException from parseMultMod
      */
     public ASTNodes.Expression parseAddSub() throws ParserException {
-        System.out.println("Parsing AddSub " + nxtToken);
         ASTNodes.Expression curr = parseMultMod();
 
         while(true){
@@ -865,7 +849,6 @@ public class Parser {
      * @throws ParserException from parseTerm
      */
     public ASTNodes.Expression parseMultMod() throws ParserException {
-        System.out.println("Parsing MultMod " + nxtToken);
         // Parsing function for  highest precedence math operators : * / %
         ASTNodes.Expression curr = parseTerm();
         while(true){
@@ -909,7 +892,6 @@ public class Parser {
      * @throws ParserException if couldn't match to any of the above nodes
      */
     public ASTNodes.Expression parseTerm() throws ParserException {
-        System.out.println("Parsing Term " + nxtToken);
         //
         if(nxtToken instanceof IdentifierToken){
             if(lookAhead == SymbolToken.DOT || lookAhead == SymbolToken.OPEN_BRACKET){
