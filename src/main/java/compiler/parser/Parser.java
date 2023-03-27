@@ -11,9 +11,9 @@ import java.util.ArrayList;
  *
  * Constructor takes Lexer as input, which will feed the tokens to the parser
  *
- * To get a full AST (represented by a StatementList object, simply call the parseCode function
+ * To get a full AST (represented by a StatementList object), simply call the parseCode function
  *
- * All parsing function are made public to facilitate testing and potentially create special behaviour but none other
+ * All parsing functions are made public to facilitate testing and potentially create special behaviour but none other
  * than the parseCode should be needed to parse a source file.
  *
  * As a rule of thumb, when reading this code, keep in mind that all the parsing functions expect that when they are
@@ -73,12 +73,12 @@ public class Parser {
      *  - Parameter
      *  - RecordVar
      *
-     *  This function ignores (consumes) semicolons, and because other parsing function don't check for them after being
+     *  This function ignores (consumes) semicolons, and because other parsing functions don't check for them after being
      *  done, that makes them optional in the language
-     *  the nxtToken and lookahead are used to know what kind of statement needs to be parsed
+     *  The nxtToken and lookahead are used to know what kind of statement needs to be parsed
      *  and thus which parsing function to call
      *
-     *  If the function cannot match curent symbol to any type of statement it simply throw an exception with the token it got
+     *  If the function cannot match current symbol to any type of statement it simply throws an exception with the token it got
      * @return
      * @throws ParserException
      */
@@ -198,7 +198,7 @@ public class Parser {
 
     /**
      * Parses statements of the form: var Identifier Type | var Identifier Type = Expression
-     * The pattern matched from the two above is selected based on the pressence (or not) of the equal sign
+     * The pattern matched from the two above is selected based on the presence (or not) of the equal sign
      * expects nxtToken to hold the token keyword var when called
      * @return VarCreation object
      * @throws ParserException
@@ -549,7 +549,7 @@ public class Parser {
      * Parses if condition: if Expression { CodeBlock } | if Expression { CodeBlock } else { CodeBlock }
      *
      * Will first parse as if no else was there. Once it is done parsing the if, its expression and codeblock, it will check
-     * wether the lookahead token is the keyword else. If it is, then it will parse it aswell
+     * whether the lookahead token is the keyword else. If it is, then it will parse it aswell
      *
      * If there is no else, the associated members of the IfCond object will simply be null
      *
@@ -597,14 +597,14 @@ public class Parser {
     }
 
     /**
-     * parse var assignment: RefToValue = Expression
+     * parses var assignment: RefToValue = Expression
      *
      * The source code might try to have expression as statements. These will usually be caught in the parseStatement,
-     * but if it starts with an identifier, then this function will catch it and throw and error saying it couldn't parse
+     * but if it starts with an identifier, then this function will catch it and throw an error saying it couldn't parse
      * the var assignment.
      *
      * @return VarAssign object
-     * @throws ParserException if there are no equal sign of if problem when aprsing expression
+     * @throws ParserException if there are no equal sign of if problem when parsing expression
      */
     public ASTNodes.VarAssign parseVarAssign() throws ParserException {
         ASTNodes.VarAssign node = new ASTNodes.VarAssign();
@@ -632,14 +632,14 @@ public class Parser {
      * Parses ref to value. Might be as simple as a variable name, or could be nested array and object access:
      * zzz.yyy.xxx[3].bbb.ccc <- This is valid
      *
-     * Since the composite RefToValue objects (ArrayAccess and ObjectAccess) have a refertence to their source Object
+     * Since the composite RefToValue objects (ArrayAccess and ObjectAccess) have a reference to their source Object
      * (also a RefToValue) we can simply parse left to right and use the current result as source for the next object
      * This is thanks to the left associativity of these operators:
      *
      * zzz.yyy.xxx[3].bbb.ccc -> ((((((zzz).yyy).xxx)[3]).bbb).ccc)
      *
-     * Note that, althought the language isn't supposed to support it, this function perfectly allows for accessing
-     * arrays of more than 1D (but they cant yet be created...)
+     * Note that, although the language isn't supposed to support it, this function perfectly allows for accessing
+     * arrays of more than 1D (but they can't yet be created...)
      *
      * @return RefToValue
      * @throws ParserException
