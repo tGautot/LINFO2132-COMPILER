@@ -167,7 +167,7 @@ public class Parser {
         }
         node.identifier = ((IdentifierToken) nxtToken).label;
         readSymbol();
-        node.type = parseType(false);
+        node.type = parseType();
 
         if (nxtToken == OperatorToken.ASSIGN) {
             readSymbol();
@@ -215,7 +215,7 @@ public class Parser {
         }
         varCreationNode.identifier = ((IdentifierToken) nxtToken).label;
         readSymbol();
-        varCreationNode.type = parseType(false);
+        varCreationNode.type = parseType();
 
         if(nxtToken == SymbolToken.SEMICOLON){
             // End of var creation
@@ -239,7 +239,7 @@ public class Parser {
      * @return Type object
      * @throws ParserException
      */
-    public ASTNodes.Type parseType(boolean isFuncCall) throws ParserException {
+    public ASTNodes.Type parseType() throws ParserException {
         System.out.println("Parsing Type");
 
         if(!(nxtToken instanceof TypeToken || nxtToken instanceof IdentifierToken)){
@@ -250,8 +250,7 @@ public class Parser {
 
         if(nxtToken instanceof TypeToken) {
             type.type = ((TypeToken) nxtToken).label;
-            if (!isFuncCall && nxtToken == TypeToken.VOID)
-                throw new ParserException("const/val/var type can't be void");
+
         }
         if(nxtToken instanceof IdentifierToken)
             type.type = ((IdentifierToken) nxtToken).label;
@@ -344,7 +343,7 @@ public class Parser {
         }
         readSymbol();
         node.paramList = parseParamList();
-        node.returnType = parseType(true);
+        node.returnType = parseType();
         if(nxtToken != SymbolToken.OPEN_CB){
             throw new ParserException("Expected `{` after function prototype but got " + nxtToken.toString());
         }
@@ -383,7 +382,7 @@ public class Parser {
             }
             p.identifier = ((IdentifierToken) nxtToken).label;
             readSymbol();
-            p.type = parseType(false);
+            p.type = parseType();
             params.add(p);
             if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
                 readSymbol();
@@ -522,7 +521,7 @@ public class Parser {
             ASTNodes.RecordVar var = new ASTNodes.RecordVar();
             var.identifier = ((IdentifierToken) nxtToken).label;
             readSymbol();
-            var.type = parseType(false);
+            var.type = parseType();
             /*if(nxtToken != SymbolToken.SEMICOLON){
                 throw new ParserException("Expected `;` after record parameter definition, but got " + nxtToken);
             }
