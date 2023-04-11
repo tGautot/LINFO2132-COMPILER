@@ -450,6 +450,7 @@ public class Parser {
             throw new ParserException("Expected symbol `}` to finish codeblock of for loop but got " + nxtToken);
         }
         readSymbol();
+        readSymbol(); // ATTENTION !!!!
         return node;
     }
 

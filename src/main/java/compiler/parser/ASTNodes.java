@@ -68,10 +68,10 @@ public class ASTNodes {
     }
 
     static public class FunctionDef extends Statement {
-        String identifier;
-        Type returnType;
-        ArrayList<Param> paramList;
-        StatementList functionCode;
+        public String identifier;
+        public Type returnType;
+        public ArrayList<Param> paramList;
+        public StatementList functionCode;
 
         public FunctionDef() {
         }
@@ -107,8 +107,8 @@ public class ASTNodes {
         }
     }
     static public class Param {
-        Type type;
-        String identifier;
+        public Type type;
+        public String identifier;
 
         public Param() {
         }
@@ -141,9 +141,9 @@ public class ASTNodes {
     }
 
     static public class VarCreation extends Statement {
-        String identifier;
-        Type type;
-        Expression varExpr;
+        public String identifier;
+        public Type type;
+        public Expression varExpr;
 
         public VarCreation() {
         }
@@ -177,9 +177,9 @@ public class ASTNodes {
         }
     }
     static public class ValCreation extends Statement {
-        String identifier;
-        Type type;
-        Expression valExpr;
+        public String identifier;
+        public Type type;
+        public Expression valExpr;
 
         public ValCreation() {
         }
@@ -213,9 +213,9 @@ public class ASTNodes {
         }
     }
     static public class ConstCreation extends Statement {
-        String identifier;
-        Type type;
-        Expression initExpr;
+        public String identifier;
+        public Type type;
+        public Expression initExpr;
 
         public ConstCreation() {
         }
@@ -250,7 +250,7 @@ public class ASTNodes {
     }
 
     static public class DeleteStt extends Statement {
-        RefToValue toDelete;
+        public RefToValue toDelete;
 
         public DeleteStt() {
         }
@@ -315,8 +315,8 @@ public class ASTNodes {
     }
 
     static public class Record extends Statement {
-        String identifier;
-        ArrayList<RecordVar> recordVars;
+        public String identifier;
+        public ArrayList<RecordVar> recordVars;
 
         public Record() {
         }
@@ -348,8 +348,8 @@ public class ASTNodes {
         }
     }
     static public class RecordVar {
-        String identifier;
-        Type type;
+        public String identifier;
+        public Type type;
 
         public RecordVar() {
         }
@@ -374,8 +374,8 @@ public class ASTNodes {
     }
 
     static public class FunctionCall extends Expression {
-        String identifier;
-        ArrayList<Expression> paramVals;
+        public String identifier;
+        public ArrayList<Expression> paramVals;
 
         public FunctionCall() {
         }
@@ -408,9 +408,9 @@ public class ASTNodes {
     }
 
     static public class IfCond extends Statement {
-        Expression condition;
-        StatementList codeBlock;
-        StatementList elseCodeBlock;
+        public Expression condition;
+        public StatementList codeBlock;
+        public StatementList elseCodeBlock;
 
         public IfCond() {
         }
@@ -445,11 +445,11 @@ public class ASTNodes {
     }
 
     static public class ForLoop extends Statement {
-        RefToValue loopVal;
-        Expression initValExpr;
-        Expression endValExpr;
-        Expression increment;
-        StatementList codeBlock;
+        public RefToValue loopVal;
+        public Expression initValExpr;
+        public Expression endValExpr;
+        public Expression increment;
+        public StatementList codeBlock;
 
         public ForLoop() {
         }
@@ -487,8 +487,8 @@ public class ASTNodes {
         }
     }
     static public class WhileLoop extends Statement {
-        Expression condition;
-        StatementList codeBlock;
+        public Expression condition;
+        public StatementList codeBlock;
 
         public WhileLoop() {
         }
@@ -521,7 +521,7 @@ public class ASTNodes {
     }
 
     static public class ReturnExpr extends Statement {
-        Expression expr;
+        public Expression expr;
 
         public ReturnExpr() {
         }
@@ -592,7 +592,7 @@ public class ASTNodes {
     static public abstract class RefToValue extends  Expression {
     }
     static public class Identifier extends RefToValue{
-        String id;
+        public String id;
 
         public Identifier() {
         }
@@ -724,8 +724,8 @@ public class ASTNodes {
 
     // Actually useless, object creation are represented using FunctionCall
     static public class ObjectCreation extends Expression {
-        String objectIdentifier;
-        ArrayList<Expression> vals;
+        public String objectIdentifier;
+        public ArrayList<Expression> vals;
 
         public ObjectCreation() {
         }
@@ -758,7 +758,7 @@ public class ASTNodes {
     }
 
     static public abstract class Comparison extends Expression {
-        Expression expr1; Expression expr2;
+        public Expression expr1; public Expression expr2;
 
         public Comparison() {
         }
