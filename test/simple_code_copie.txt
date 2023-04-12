@@ -21,6 +21,10 @@ val e int = a*2;    // value
 
 var c int[] = int[](5);  // new array of length 5
 var d Person = Person("me", Point(3,7), int[](a*2));
+c[0] = 4;
+d.history[10]=20;
+
+d.location = copyPoints(d.location);
 
 
 proc square(v int) int {

@@ -40,6 +40,11 @@ public class SemanticAnalyzer {
         functionTable.put("floor",p);
         symbolTable.add("floor",new ASTNodes.Type("int",false));
 
+        p = new ArrayList<>();
+        p.add(new ASTNodes.Param(new ASTNodes.Type("string",false),"value"));
+        functionTable.put("len",p);
+        symbolTable.add("len",new ASTNodes.Type("int",false));
+
     }
 
     public void analyze(ASTNodes.StatementList statementList, SymbolTable table) throws SemanticAnalyzerException {
@@ -116,10 +121,13 @@ public class SemanticAnalyzer {
         } else if (s instanceof ASTNodes.Expression) {
             analyzeExpression((ASTNodes.Expression) s,table);
         } else if (s instanceof ASTNodes.DeleteStt) {
-            // TODO
+            ASTNodes.DeleteStt del = (ASTNodes.DeleteStt) s;
+            // will throw an error if the variable to delete is unknown
+            ASTNodes.Type type = analyzeRefToValue(del.toDelete,table);
         }
 
     }
+
 
     public void analyzeForLoop(ASTNodes.ForLoop loop, SymbolTable table) throws SemanticAnalyzerException {
         ASTNodes.Type initType = analyzeExpression(loop.initValExpr,table);
@@ -176,9 +184,15 @@ public class SemanticAnalyzer {
 
         for (int i = 0; i < tParam.size(); i++) {
             ASTNodes.Type type = analyzeExpression(call.paramVals.get(i), table);
-            if (!tParam.get(i).type.equals(type)) {
-                throw new SemanticAnalyzerException("wrong type for argument in function call " + call.identifier);
+            if (call.identifier.equals("len")) {
+                if (type.isArray != true && !type.equals(new ASTNodes.Type("string",false))) {
+                    throw new SemanticAnalyzerException("wrong type for argument in function call " + call.identifier);
+                }
+            } else {
+                if (!tParam.get(i).type.equals(type)) {
+                    throw new SemanticAnalyzerException("wrong type for argument in function call " + call.identifier);
 
+                }
             }
         }
 
@@ -244,7 +258,7 @@ public class SemanticAnalyzer {
     }
 
     public void analyzeValCreation(ASTNodes.ValCreation creation,SymbolTable table) throws SemanticAnalyzerException {
-        if (creation.type.type == "void") {
+        if (creation.type.type.equals("void")) {
             throw new SemanticAnalyzerException("Val type cannot be void");
         }
         if (creation.valExpr != null) {
@@ -255,7 +269,7 @@ public class SemanticAnalyzer {
     }
 
     public void analyzeVarCreation(ASTNodes.VarCreation creation,SymbolTable table) throws SemanticAnalyzerException {
-        if (creation.type.type == "void") {
+        if (creation.type.type.equals("void")) {
             throw new SemanticAnalyzerException("Var type cannot be void");
         }
         if (creation.varExpr != null) {
@@ -268,8 +282,13 @@ public class SemanticAnalyzer {
     }
 
     public void analyzeConstCreation(ASTNodes.ConstCreation creation,SymbolTable table) throws SemanticAnalyzerException {
-        if (creation.type.type == "void") {
+        if (creation.type.type.equals("void")) {
             throw new SemanticAnalyzerException("Const type cannot be void");
+        }
+        if (creation.type.type != "int" && creation.type.type != "real" &&
+                creation.type.type != "string" && creation.type.type != "bool") {
+            throw new SemanticAnalyzerException("Const type must be a base type");
+
         }
         if (creation.initExpr != null) {
             if (!creation.type.equals(analyzeExpression(creation.initExpr,table))) {
@@ -281,7 +300,7 @@ public class SemanticAnalyzer {
     public ASTNodes.Type analyzeFunctionDef(ASTNodes.FunctionDef functionDef, SymbolTable table) throws SemanticAnalyzerException {
         ASTNodes.Type type = functionDef.returnType;
         ASTNodes.StatementList block = functionDef.functionCode;
-        if (type.type == "void") {
+        if (type.type.equals("void")) {
             if (block.statements.get(block.statements.size()-1) instanceof ASTNodes.ReturnExpr) {
                 throw new SemanticAnalyzerException("void function cannot return anything");
             }
@@ -379,7 +398,7 @@ public class SemanticAnalyzer {
             return type1;
 
         } else if (expr instanceof ASTNodes.ModExpr) {
-            ASTNodes.MultExpr e = (ASTNodes.MultExpr) expr;
+            ASTNodes.ModExpr e = (ASTNodes.ModExpr) expr;
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
             if (!type1.equals(type2)) {
@@ -505,7 +524,7 @@ public class SemanticAnalyzer {
             return analyzeFunctionCall(call,table);
         } else if (expr instanceof ASTNodes.ArrayCreation) {
             ASTNodes.ArrayCreation creation = (ASTNodes.ArrayCreation) expr;
-            if (creation.typeIdentifier == "void") {
+            if (creation.typeIdentifier.equals("void")) {
                 throw new SemanticAnalyzerException("void type not allowed for array");
             }
 
