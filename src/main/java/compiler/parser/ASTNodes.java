@@ -50,7 +50,7 @@ public class ASTNodes {
 
         @Override
         public String toString() {
-            return "Type( " + type + (isArray ? "[]" : "" ) + ")";
+            return "Type(" + type + (isArray ? "[]" : "" ) + ")";
         }
 
         @Override

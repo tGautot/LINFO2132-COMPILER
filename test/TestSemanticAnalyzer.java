@@ -8,6 +8,7 @@ import compiler.parser.ParserException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -124,7 +125,7 @@ public class TestSemanticAnalyzer {
                 "for i=0+1+len(\"hello\") to 10/2 by 1 {\n" +
                 "    for j=0 to 20 by 2*floor(3.2) {\n" +
                 "        for k=3 to 30 by 1 {\n" +
-                "            val a string = \"hello\";\n" +
+                "            val a string = chr(78);\n" +
                 "        }\n" +
                 "    }\n" +
                 "}";
@@ -151,7 +152,7 @@ public class TestSemanticAnalyzer {
                 "for i=0+1+len(\"hello\") to 10/2 by 1 {\n" +
                 "    for j=0 to 20 by 2*floor(3.2) {\n" +
                 "        for k=3 to 30 by 7.3*8.8 {\n" +
-                "            val a string = \"hello\";\n" +
+                "            val a string = chr(78);\n" +
                 "        }\n" +
                 "    }\n" +
                 "}";
@@ -194,7 +195,7 @@ public class TestSemanticAnalyzer {
         assertTrue(true);
 
         // incorrect condition in while
-        input = "while 3<>4 and \"hello\"+\"hola\" or 3>7%4 {\n" +
+        input = "while 3<>4 and chr(78)+\"hola\" or 3>7%4 {\n" +
                 "    var a int = 35\n" +
                 "}";
         reader = new StringReader(input);
@@ -229,7 +230,7 @@ public class TestSemanticAnalyzer {
                 "    return v*v;\n" +
                 "}\n" +
                 "\n" +
-                "var p Point = copyPoints(Point(10%3,chr(\"hello\")),3); ";
+                "var p Point = copyPoints(Point(10%3,len(\"hello\")),3); ";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
         Parser parser = new Parser(lexer);
@@ -259,7 +260,7 @@ public class TestSemanticAnalyzer {
                 "    return v*v;\n" +
                 "}\n" +
                 "\n" +
-                "var p Point = copyPoints(Point(10%3,chr(\"hello\")),not(3.4<>1.2)); ";
+                "var p Point = copyPoints(Point(10%3,len(\"hello\")),not(3.4<>1.2)); ";
         reader = new StringReader(input);
         lexer = new Lexer(reader);
         parser = new Parser(lexer);
@@ -446,6 +447,299 @@ public class TestSemanticAnalyzer {
 
     }
 
+    @Test
+    public void testMathExpr() throws SemanticAnalyzerException {
+        String input = "var a int = (1+4+7%6)/(1*2-4--7)+floor(7.5)+-len(\"a\")\n" +
+                "var b real = (4.0+-11.2-4.6*7.0)/(47.9--7.1)";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable);
+
+        assertTrue(true);
+
+        // incorrect
+        String[] inputs = {"var a int = (1+4+7%6)/(1*2-4--7)+floor(7.5)*6.5+-len(\"a\")","var b real = (4.0+-11.2-4.6*7.0)/(47.9--7.1)%4.9"};
+        for (String str : inputs) {
+            reader = new StringReader(str);
+            lexer = new Lexer(reader);
+            parser = new Parser(lexer);
+            try {
+                sl = parser.parseCode();
+            } catch (ParserException e) {
+                throw new RuntimeException(e);
+            }
+
+            analyzer = new SemanticAnalyzer(sl);
+            SemanticAnalyzer finalAnalyzer = analyzer;
+            ASTNodes.StatementList finalSl = sl;
+            assertThrows(SemanticAnalyzerException.class,
+                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+        }
+    }
+
+    @Test
+    public void testComparison() throws SemanticAnalyzerException {
+        String input = "\n" +
+                "proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}\n" +
+                "\n" +
+                "var a bool = true and false and not(false)\n" +
+                "\n" +
+                "var b bool = true == a or false <> not(a)\n" +
+                "var c bool = 1+len(\"hello\")%78 <= 4*square(floor(4.7)) and chr(45) < \"hola\" or b";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable);
+
+        assertTrue(true);
+
+        // incorrect
+        String[] inputs = {"proc square(v float) float {\n" +
+                "    return v*v;\n" +
+                "}\n" +
+                "\n" +
+                "var a bool = true and false and not(false)\n" +
+                "\n" +
+                "var b bool = true == a or false <> not(a)\n" +
+                "var c bool = 1+len(\"hello\")%78 <= 4.0*square(4.7) and chr(45) < \"hola\" or b",
+                "proc square(v int) int {\n" +
+                        "    return v*v;\n" +
+                        "}\n" +
+                        "\n" +
+                        "var a bool = true and false and not(false)\n" +
+                        "\n" +
+                        "var b bool = true == a or false <> not(a)\n" +
+                        "var c bool = 1+len(\"hello\")%78 <= 4*square(floor(4.7)) and 4.6/7.2 or b"};
+        for (String str : inputs) {
+            reader = new StringReader(str);
+            lexer = new Lexer(reader);
+            parser = new Parser(lexer);
+            try {
+                sl = parser.parseCode();
+            } catch (ParserException e) {
+                throw new RuntimeException(e);
+            }
+
+            analyzer = new SemanticAnalyzer(sl);
+            SemanticAnalyzer finalAnalyzer = analyzer;
+            ASTNodes.StatementList finalSl = sl;
+            assertThrows(SemanticAnalyzerException.class,
+                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+        }
+    }
+
+    @Test
+    public void testScope() throws SemanticAnalyzerException {
+        String input = "var x int = len(\"hello\")\n" +
+                "val y int = square(x)\n" +
+                "proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable);
+
+        assertTrue(true);
+
+        // incorrect
+        String[] inputs = {"proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}\n" +
+                "\n" +
+                "val y int = square(x)\n" +
+                "\n" +
+                "var x int = len(\"hello\")",
+                "proc square(v int) int {\n" +
+                        "    return v*v;\n" +
+                        "}\n" +
+                        "\n" +
+                        "val y int = square(23)\n" +
+                        "\n" +
+                        "var x int = len(\"hello\")\n" +
+                        "var y int = 41",
+                "proc square(v int) int {\n" +
+                        "    return v*v;\n" +
+                        "}\n" +
+                        "\n" +
+                        "val y int = square(23)\n" +
+                        "\n" +
+                        "var x int = len(\"hello\")\n" +
+                        "var square int = 41",
+                "proc square(v int) int {\n" +
+                        "    return v*v;\n" +
+                        "}\n" +
+                        "val squarE int = square(40)\n" +
+                        "var x int = len(\"hello\")\n" +
+                        "var write string = chr(12)\n"
+
+        };
+
+        for (String str : inputs) {
+            reader = new StringReader(str);
+            lexer = new Lexer(reader);
+            parser = new Parser(lexer);
+            try {
+                sl = parser.parseCode();
+            } catch (ParserException e) {
+                throw new RuntimeException(e);
+            }
+
+            analyzer = new SemanticAnalyzer(sl);
+            SemanticAnalyzer finalAnalyzer = analyzer;
+            ASTNodes.StatementList finalSl = sl;
+            assertThrows(SemanticAnalyzerException.class,
+                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+        }
+    }
+
+    @Test public void testSymboleTable() throws IOException, SemanticAnalyzerException {
+
+        String input = "var i int = 0; \n" +
+                "var j int = 0;\n" +
+                "var k int = 0;\n" +
+                "\n" +
+                "for i=0+1+len(\"hello\") to 10/2 by 1 {\n" +
+                "    val x bool = not(true)\n" +
+                "    for j=0 to 20 by 2*floor(3.2) {\n" +
+                "        var y int = square(readInt())\n" +
+                "        for k=3 to 30 by 1{\n" +
+                "            val a string = chr(78);\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}";
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable);
+
+        SymbolTable table = new SymbolTable();
+        table.add("i",new ASTNodes.Type("int",false));
+        table.add("j",new ASTNodes.Type("int",false));
+        table.add("k",new ASTNodes.Type("int",false));
+        table.add("square",new ASTNodes.Type("int",false));
+
+        analyzer.symbolTable.remove("not");
+        analyzer.symbolTable.remove("chr");
+        analyzer.symbolTable.remove("floor");
+        analyzer.symbolTable.remove("len");
+        analyzer.symbolTable.remove("readInt");
+        analyzer.symbolTable.remove("readReal");
+        analyzer.symbolTable.remove("readString");
+        analyzer.symbolTable.remove("writeInt");
+        analyzer.symbolTable.remove("writeReal");
+        analyzer.symbolTable.remove("write");
+        analyzer.symbolTable.remove("writeln");
+        assertTrue(table.table.equals(analyzer.symbolTable.table));
+    }
+
+    @Test public void testDoubleDefinition() throws IOException,SemanticAnalyzerException {
+        String input = "\n" +
+                "const a int = square(10)\n" +
+                "val b bool = not(true)\n" +
+                "var c real = 4.6*7.9+4.1\n" +
+                "\n" +
+                "proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}\n" +
+                "\n" +
+                "val squarE int = square(40)\n" +
+                "\n" +
+                "var x int = len(\"hello\")";
+
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable);
+
+        // incorrect
+        String[] inputs = {"\n" +
+                "const a int = square(10)\n" +
+                "val b bool = not(true)\n" +
+                "var c real = 4.6*7.9+4.1\n" +
+                "\n" +
+                "proc square(v int) int {\n" +
+                "    return v*v;\n" +
+                "}\n" +
+                "\n" +
+                "val squarE int = square(40)\n" +
+                "\n" +
+                "var x int = len(\"hello\")\n" +
+                "\n" +
+                "record square {\n" +
+                "    width int\n" +
+                "}",
+                "proc square(v int) int {\n" +
+                        "    return v*v;\n" +
+                        "}\n" +
+                        "val squarE int = square(40)\n" +
+                        "var x int = len(\"hello\")\n" +
+                        "proc write (str string) void {\n" +
+                        "    //\n" +
+                        "}"
+        };
+        for (String str : inputs) {
+            reader = new StringReader(str);
+            lexer = new Lexer(reader);
+            parser = new Parser(lexer);
+            try {
+                sl = parser.parseCode();
+            } catch (ParserException e) {
+                throw new RuntimeException(e);
+            }
+            ASTNodes.StatementList finalSl = sl;
+            assertThrows(SemanticAnalyzerException.class,
+                    () -> new SemanticAnalyzer(finalSl));
+        }
+    }
 
 
     @Test
@@ -466,7 +760,7 @@ public class TestSemanticAnalyzer {
         analyzer.analyze(sl,analyzer.symbolTable);
 
         assertTrue(true);
-
-
     }
+
+
 }

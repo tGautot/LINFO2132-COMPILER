@@ -1,48 +1,32 @@
-
-const i int = 3;
-const j real = 3.2*5.0;
-const k int = i*3;
-const message string = "Hello";
-const isEmpty bool = true;
-
-record Point {
-    x int;
-    y int;
+record A {
+    a int;
+    tab int[];
+    b B;
 }
 
-record Person {
-    name string;
-    location Point;
-    history int[];
+record B {
+    a int;
+    tab int [];
 }
 
-var a int = 3;
-val e int = a*2;    // value
-
-var c int[] = int[](5);  // new array of length 5
-var d Person = Person("me", Point(3,7), int[](a*2));
-c[0] = 4;
-d.history[10]=20;
-
-d.location = copyPoints(d.location);
+var aaa A = A( 10,int[](5),B(20,int[](10)) )
 
 
-proc square(v int) int {
-    return v*v;
-}
+var x int = len("hello")
+var t int[]
 
-proc copyPoints(p Point) Point {
-     return Point(p.x, p.y)
-}
+t[0]=10
 
-proc main() void {
-    var value int = floor(5.32);
-    var i int;
-    for i=1 to 100 by 2 {
-        while value<>3 {
-            // ....
-        }
-    }
+aaa.b.a = t[0]
 
-    i = (i+2)*2
-}
+t = aaa.tab
+
+//var abc int[] = t+t
+
+//x=int[](4) error 
+
+//t[1]=int[](5) error
+
+
+
+

@@ -24,16 +24,17 @@ public class SemanticAnalyzer {
         this.symbolTable = new SymbolTable();
         //this.recordTable = new HashMap<>();
         this.functionTable = new HashMap<>();
+
+        // add all the predefined functions
         ArrayList<ASTNodes.Param> p = new ArrayList<>();
-        //new ASTNodes.Type("bool",false);
         p.add(new ASTNodes.Param(new ASTNodes.Type("bool",false),"neg"));
         functionTable.put("not",p);
         symbolTable.add("not",new ASTNodes.Type("bool",false));
 
         p = new ArrayList<>();
-        p.add(new ASTNodes.Param(new ASTNodes.Type("string",false),"value"));
+        p.add(new ASTNodes.Param(new ASTNodes.Type("int",false),"value"));
         functionTable.put("chr",p);
-        symbolTable.add("chr",new ASTNodes.Type("int",false));
+        symbolTable.add("chr",new ASTNodes.Type("string",false));
 
         p = new ArrayList<>();
         p.add(new ASTNodes.Param(new ASTNodes.Type("real",false),"value"));
@@ -45,29 +46,51 @@ public class SemanticAnalyzer {
         functionTable.put("len",p);
         symbolTable.add("len",new ASTNodes.Type("int",false));
 
-    }
+        p = new ArrayList<>();
+        functionTable.put("readInt",p);
+        symbolTable.add("readInt",new ASTNodes.Type("int",false));
 
-    public void analyze(ASTNodes.StatementList statementList, SymbolTable table) throws SemanticAnalyzerException {
-        // first scan to know all the functions, var and val
+        p = new ArrayList<>();
+        functionTable.put("readReal",p);
+        symbolTable.add("readReal",new ASTNodes.Type("real",false));
+
+        p = new ArrayList<>();
+        functionTable.put("readString",p);
+        symbolTable.add("readString",new ASTNodes.Type("string",false));
+
+        p = new ArrayList<>();
+        p.add(new ASTNodes.Param(new ASTNodes.Type("int",false),"value"));
+        functionTable.put("writeInt",p);
+        symbolTable.add("writeInt",new ASTNodes.Type("bool",false));
+
+        p = new ArrayList<>();
+        p.add(new ASTNodes.Param(new ASTNodes.Type("real",false),"value"));
+        functionTable.put("writeReal",p);
+        symbolTable.add("writeReal",new ASTNodes.Type("bool",false));
+
+        p = new ArrayList<>();
+        p.add(new ASTNodes.Param(new ASTNodes.Type("string",false),"value"));
+        functionTable.put("write",p);
+        symbolTable.add("write",new ASTNodes.Type("bool",false));
+
+        p = new ArrayList<>();
+        p.add(new ASTNodes.Param(new ASTNodes.Type("string",false),"value"));
+        functionTable.put("writeln",p);
+        symbolTable.add("writeln",new ASTNodes.Type("bool",false));
+
+        // first scan to register all the functions and records
         for (ASTNodes.Statement s : statementList.statements) {
             if (s instanceof ASTNodes.FunctionDef) {
                 ASTNodes.FunctionDef f = (ASTNodes.FunctionDef) s;
                 if (functionTable.containsKey(f.identifier)) {
                     throw new SemanticAnalyzerException("double definition of function : "+f.identifier);
                 }
-                table.add(f.identifier,f.returnType);
+                symbolTable.add(f.identifier,f.returnType);
                 functionTable.put(f.identifier,f.paramList);
-            } else if (s instanceof ASTNodes.VarCreation) {
-                ASTNodes.VarCreation creation = (ASTNodes.VarCreation) s;
-                table.add(creation.identifier,creation.type);
-            } else if (s instanceof ASTNodes.ValCreation) {
-                ASTNodes.ValCreation creation = (ASTNodes.ValCreation) s;
-                table.add(creation.identifier,creation.type);
-            }
-            else if (s instanceof ASTNodes.Record) {
+            } else if (s instanceof ASTNodes.Record) {
                 ASTNodes.Record record = (ASTNodes.Record) s;
                 ASTNodes.Type type = new ASTNodes.Type(record.identifier,false);
-                table.add(record.identifier, type);
+                symbolTable.add(record.identifier, type);
                 if (functionTable.containsKey(record.identifier)) {
                     throw new SemanticAnalyzerException("double definition of record : "+record.identifier);
 
@@ -80,10 +103,23 @@ public class SemanticAnalyzer {
             }
         }
 
+        // second scan to register all the constants
+        for (int i = 0; i < statementList.statements.size(); i++) {
+            ASTNodes.Statement s = statementList.statements.get(i);
+            if (s instanceof ASTNodes.ConstCreation) {
+                ASTNodes.ConstCreation creation = (ASTNodes.ConstCreation) s;
+                symbolTable.add(creation.identifier,creation.type);
+                analyzeConstCreation(creation,symbolTable);
+                statementList.statements.remove(i);
+                i--;
+            } else break;
+        }
+    }
+
+    public void analyze(ASTNodes.StatementList statementList, SymbolTable table) throws SemanticAnalyzerException {
         for (ASTNodes.Statement s : statementList.statements) {
             analyzeStatement(s,table);
         }
-
     }
 
     public void analyzeStatement(ASTNodes.Statement s,SymbolTable table) throws SemanticAnalyzerException {
@@ -92,18 +128,14 @@ public class SemanticAnalyzer {
             analyzeFunctionDef(f,new SymbolTable(table));
         } else if (s instanceof ASTNodes.VarCreation) {
             ASTNodes.VarCreation creation = (ASTNodes.VarCreation) s;
-            //if (table != symbolTable)
-              //  table.add(creation.identifier,creation.type);
             analyzeVarCreation(creation,table);
+            table.add(creation.identifier, creation.type);
         } else if (s instanceof ASTNodes.ValCreation) {
             ASTNodes.ValCreation creation = (ASTNodes.ValCreation) s;
-            //if (table != symbolTable)
-              //  table.add(creation.identifier,creation.type);
             analyzeValCreation(creation,table);
+            table.add(creation.identifier, creation.type);
         } else if (s instanceof ASTNodes.ConstCreation) {
-            ASTNodes.ConstCreation creation = (ASTNodes.ConstCreation) s;
-            table.add(creation.identifier,creation.type);
-            analyzeConstCreation(creation,table);
+            throw new SemanticAnalyzerException("const must be defined at the top of the file");
         } else if (s instanceof ASTNodes.VarAssign) {
             ASTNodes.VarAssign assign = (ASTNodes.VarAssign) s;
             analyzeVarAssign(assign,table);
@@ -125,41 +157,38 @@ public class SemanticAnalyzer {
             // will throw an error if the variable to delete is unknown
             ASTNodes.Type type = analyzeRefToValue(del.toDelete,table);
         }
-
     }
 
 
     public void analyzeForLoop(ASTNodes.ForLoop loop, SymbolTable table) throws SemanticAnalyzerException {
         ASTNodes.Type initType = analyzeExpression(loop.initValExpr,table);
         if (initType.type != "int") {
-            throw new SemanticAnalyzerException("loop index should be a int");
+            throw new SemanticAnalyzerException("loop index should be a int but got : " + initType);
         }
         ASTNodes.Type endType = analyzeExpression(loop.endValExpr, table);
         if (endType.type != "int") {
-            throw new SemanticAnalyzerException("end index in forLoop should be a int");
+            throw new SemanticAnalyzerException("end index in forLoop should be a int nut got : " + endType);
         }
         ASTNodes.Type incType = analyzeExpression(loop.increment, table);
         if (incType.type != "int") {
-            throw new SemanticAnalyzerException("increment in forLoop should be a int");
+            throw new SemanticAnalyzerException("increment in forLoop should be a int but got : " + incType);
         }
 
         if (!(loop.loopVal instanceof ASTNodes.Identifier)) {
             throw new SemanticAnalyzerException("iteration variable should cannot come from an array or object");
         }
         if (!table.contain(((ASTNodes.Identifier) loop.loopVal).id)) {
-            throw new SemanticAnalyzerException("unknown loop variable");
+            throw new SemanticAnalyzerException("unknown loop variable : " + ((ASTNodes.Identifier) loop.loopVal).id);
         }
         if (table.get(((ASTNodes.Identifier) loop.loopVal).id).type != "int") {
-            throw new SemanticAnalyzerException("loop variable should be an int");
+            throw new SemanticAnalyzerException("loop variable should be an int but got : " + table.get(((ASTNodes.Identifier) loop.loopVal).id));
         }
-
         analyze(loop.codeBlock,table);
-
     }
     public void analyzeWhileLoop(ASTNodes.WhileLoop loop, SymbolTable table) throws SemanticAnalyzerException {
         ASTNodes.Type type = analyzeExpression(loop.condition,table);
         if (type.type != "bool") {
-            throw new SemanticAnalyzerException("while condition should have a boolean condition");
+            throw new SemanticAnalyzerException("while condition should have a boolean condition but got : " + type);
         }
         analyze(loop.codeBlock,table);
     }
@@ -167,7 +196,7 @@ public class SemanticAnalyzer {
     public void analyzeIfCond(ASTNodes.IfCond cond, SymbolTable table) throws SemanticAnalyzerException {
         ASTNodes.Type type = analyzeExpression(cond.condition,table);
         if (type.type != "bool") {
-            throw new SemanticAnalyzerException("if condition should have a boolean condition");
+            throw new SemanticAnalyzerException("if condition should have a boolean condition but got : " + type);
         }
         analyze(cond.codeBlock,table);
 
@@ -186,11 +215,11 @@ public class SemanticAnalyzer {
             ASTNodes.Type type = analyzeExpression(call.paramVals.get(i), table);
             if (call.identifier.equals("len")) {
                 if (type.isArray != true && !type.equals(new ASTNodes.Type("string",false))) {
-                    throw new SemanticAnalyzerException("wrong type for argument in function call " + call.identifier);
+                    throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i) + " in function call " + call.identifier + ", got : "+type);
                 }
             } else {
                 if (!tParam.get(i).type.equals(type)) {
-                    throw new SemanticAnalyzerException("wrong type for argument in function call " + call.identifier);
+                    throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i) + " in function call " + call.identifier + ", got : "+type);
 
                 }
             }
@@ -239,7 +268,8 @@ public class SemanticAnalyzer {
                 }
 
             } else if (ele instanceof Integer) {
-                // nothing, maybe something if extension of arrays
+                // type is no more an array because 2D arrays not allowed
+                type = new ASTNodes.Type(type.type,false);
             }
         }
 
@@ -251,8 +281,8 @@ public class SemanticAnalyzer {
 
         ASTNodes.Type type = analyzeRefToValue(assign.ref,table);
 
-        if (!type.type.equals(exprType.type)) { // ".type" because if array access, it this condition would be false
-            throw new SemanticAnalyzerException("tried to assign " + exprType.type + "to a " + type.type + "variable");
+        if (!type.equals(exprType)) {
+            throw new SemanticAnalyzerException("tried to assign " + exprType + " to a " + type + " variable");
         }
 
     }
@@ -262,8 +292,9 @@ public class SemanticAnalyzer {
             throw new SemanticAnalyzerException("Val type cannot be void");
         }
         if (creation.valExpr != null) {
-            if (!creation.type.equals(analyzeExpression(creation.valExpr,table))) {
-                throw new SemanticAnalyzerException("types are not matching");
+            ASTNodes.Type assignedType = analyzeExpression(creation.valExpr,table);
+            if (!creation.type.equals(assignedType)) {
+                throw new SemanticAnalyzerException("tried to assign " + assignedType + " to a " + creation + " value");
             }
         }
     }
@@ -275,10 +306,10 @@ public class SemanticAnalyzer {
         if (creation.varExpr != null) {
             ASTNodes.Type type = analyzeExpression(creation.varExpr,table);
             if (!creation.type.equals(type)) {
-                throw new SemanticAnalyzerException("types are not matching");
+                throw new SemanticAnalyzerException("tried to assign " + type + " to a " + creation + " value");
+
             }
         }
-        //return creation.type;
     }
 
     public void analyzeConstCreation(ASTNodes.ConstCreation creation,SymbolTable table) throws SemanticAnalyzerException {
@@ -287,12 +318,14 @@ public class SemanticAnalyzer {
         }
         if (creation.type.type != "int" && creation.type.type != "real" &&
                 creation.type.type != "string" && creation.type.type != "bool") {
-            throw new SemanticAnalyzerException("Const type must be a base type");
+            throw new SemanticAnalyzerException("Const type must be a base type but is : " + creation);
 
         }
         if (creation.initExpr != null) {
-            if (!creation.type.equals(analyzeExpression(creation.initExpr,table))) {
-                throw new SemanticAnalyzerException("types are not matching");
+            ASTNodes.Type type = analyzeExpression(creation.initExpr,table);
+            if (!creation.type.equals(type)) {
+                throw new SemanticAnalyzerException("tried to assign " + type + " to a " + creation + " const");
+
             }
         }
     }
@@ -302,7 +335,7 @@ public class SemanticAnalyzer {
         ASTNodes.StatementList block = functionDef.functionCode;
         if (type.type.equals("void")) {
             if (block.statements.get(block.statements.size()-1) instanceof ASTNodes.ReturnExpr) {
-                throw new SemanticAnalyzerException("void function cannot return anything");
+                throw new SemanticAnalyzerException("void function " + functionDef.identifier +  "cannot return anything");
             }
             for (ASTNodes.Param p: functionDef.paramList) {
                 table.add(p.identifier,p.type);
@@ -311,7 +344,7 @@ public class SemanticAnalyzer {
             return type;
         } else {
             if (!(block.statements.get(block.statements.size()-1) instanceof ASTNodes.ReturnExpr)) {
-                throw new SemanticAnalyzerException("non void function must return");
+                throw new SemanticAnalyzerException("non void function " + functionDef.identifier  + " must return");
             }
             for (ASTNodes.Param p: functionDef.paramList) {
                 table.add(p.identifier,p.type);
@@ -320,7 +353,7 @@ public class SemanticAnalyzer {
             ASTNodes.ReturnExpr last = (ASTNodes.ReturnExpr)block.statements.get(block.statements.size()-1);
             ASTNodes.Type actualReturnType = analyzeExpression(last.expr,table);
             if (!type.equals(actualReturnType)) {
-                throw new SemanticAnalyzerException("function returns wrong type");
+                throw new SemanticAnalyzerException("function " + functionDef.identifier +  " returns wrong type : " + actualReturnType + " instead of " + type);
             }
             return type;
         }
@@ -348,7 +381,7 @@ public class SemanticAnalyzer {
             ASTNodes.NegateExpr e = (ASTNodes.NegateExpr) expr;
             String type = analyzeExpression(e.expr, table).type;
             if (type != "int" && type != "real") {
-                throw new SemanticAnalyzerException("tried to negate a type " + type);
+                throw new SemanticAnalyzerException("tried to negate a " + type);
             }
             return analyzeExpression(e.expr, table);
         } else if (expr instanceof ASTNodes.AddExpr) {
@@ -356,10 +389,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types in addition should be the same");
+                throw new SemanticAnalyzerException("types in addition should be the same : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real") {
-                throw new SemanticAnalyzerException("add operation not supported on : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+                throw new SemanticAnalyzerException("add operation not supported on : " + type1);
             }
             return type1;
         } else if (expr instanceof ASTNodes.SubExpr) {
@@ -367,10 +400,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types in subtraction should be the same");
+                throw new SemanticAnalyzerException("types in subtraction should be the same : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real") {
-                throw new SemanticAnalyzerException("sub operation not supported on : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+                throw new SemanticAnalyzerException("sub operation not supported on : " + type1);
             }
             return type1;
         } else if (expr instanceof ASTNodes.DivExpr) {
@@ -378,10 +411,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types in division should be the same");
+                throw new SemanticAnalyzerException("types in division should be the same : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real") {
-                throw new SemanticAnalyzerException("division operation not supported on : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+                throw new SemanticAnalyzerException("division operation not supported on : " + type1);
             }
             return type1;
 
@@ -390,10 +423,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types in multiplication should be the same");
+                throw new SemanticAnalyzerException("types in multiplication should be the same : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real") {
-                throw new SemanticAnalyzerException("multiplication operation not supported on : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+                throw new SemanticAnalyzerException("multiplication operation not supported on : " + type1);
             }
             return type1;
 
@@ -402,10 +435,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types in modulo should be the same");
+                throw new SemanticAnalyzerException("types in modulo should be the same : " + type1 + " and " + type2);
             }
-            if (type1.type != "int") {
-                throw new SemanticAnalyzerException("modulo operation not supported on : " + type1.type);
+            if (type1.type != "int" || type1.isArray) {
+                throw new SemanticAnalyzerException("modulo operation not supported on : " + type1);
             }
             return type1;
 
@@ -420,10 +453,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in equality cmp");
+                throw new SemanticAnalyzerException("types should be the same in equality cmp : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") {
-                throw new SemanticAnalyzerException("type in eq comparison should be a base type but got : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") || type1.isArray) {
+                throw new SemanticAnalyzerException("type in eq comparison should be a base type but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
         } else if (cmp instanceof ASTNodes.NotEqComp) {
@@ -431,10 +464,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in inequality cmp");
+                throw new SemanticAnalyzerException("types should be the same in inequality cmp : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") {
-                throw new SemanticAnalyzerException("type in ineq comparison should be a base type but got : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") || type1.isArray) {
+                throw new SemanticAnalyzerException("type in ineq comparison should be a base type but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
         } else if (cmp instanceof ASTNodes.GrEqComp) {
@@ -442,10 +475,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in greater or eq cmp");
+                throw new SemanticAnalyzerException("types should be the same in greater or eq cmp : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real") {
-                throw new SemanticAnalyzerException("type in greater or eq comparison should be int or real but got : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+                throw new SemanticAnalyzerException("type in greater or eq comparison should be int or real but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
         } else if (cmp instanceof ASTNodes.SmEqComp) {
@@ -453,10 +486,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in smaller or eq cmp");
+                throw new SemanticAnalyzerException("types should be the same in smaller or eq cmp : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real") {
-                throw new SemanticAnalyzerException("type in smaller or eq comparison should be int or real but got : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+                throw new SemanticAnalyzerException("type in smaller or eq comparison should be int or real but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
         } else if (cmp instanceof ASTNodes.GrComp) {
@@ -464,10 +497,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in strict greater cmp");
+                throw new SemanticAnalyzerException("types should be the same in strict greater cmp : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") {
-                throw new SemanticAnalyzerException("type in strict greater comparison should be a base type but got : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") || type1.isArray) {
+                throw new SemanticAnalyzerException("type in strict greater comparison should be a base type but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
 
@@ -476,10 +509,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in strict smaller cmp");
+                throw new SemanticAnalyzerException("types should be the same in strict smaller cmp : " + type1 + " and " + type2);
             }
-            if (type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") {
-                throw new SemanticAnalyzerException("type in strict smaller comparison should be a base type but got : " + type1.type);
+            if ((type1.type != "int" && type1.type != "real" && type1.type != "bool" && type1.type != "string") || type1.isArray) {
+                throw new SemanticAnalyzerException("type in strict smaller comparison should be a base type but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
 
@@ -488,10 +521,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in and operator");
+                throw new SemanticAnalyzerException("types should be the same in and operator : " + type1 + " and " + type2);
             }
-            if (type1.type != "bool") {
-                throw new SemanticAnalyzerException("type in and operator should be a bool but got : " + type1.type);
+            if (type1.type != "bool"|| type1.isArray) {
+                throw new SemanticAnalyzerException("type in and operator should be a bool but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
         } else if (cmp instanceof ASTNodes.OrComp) {
@@ -499,10 +532,10 @@ public class SemanticAnalyzer {
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
             if (!type1.equals(type2)) {
-                throw new SemanticAnalyzerException("types should be the same in or operator");
+                throw new SemanticAnalyzerException("types should be the same in or operator : " + type1 + " and " + type2);
             }
-            if (type1.type != "bool") {
-                throw new SemanticAnalyzerException("type in or operator should be a bool but got : " + type1.type);
+            if (type1.type != "bool" || type1.isArray) {
+                throw new SemanticAnalyzerException("type in or operator should be a bool but got : " + type1);
             }
             return new ASTNodes.Type("bool",false);
         } else {
@@ -512,12 +545,6 @@ public class SemanticAnalyzer {
 
     public ASTNodes.Type analyzeExpression(ASTNodes.Expression expr, SymbolTable table) throws SemanticAnalyzerException {
         if (expr instanceof ASTNodes.DirectValue) {
-            /*
-            if (!table.contain(((ASTNodes.DirectValue) expr).value)) {
-                throw new SemanticAnalyzerException("unknown identifier " + ((ASTNodes.DirectValue) expr).value);
-            }
-            */
-
             return ((ASTNodes.DirectValue) expr).type;
         } else if (expr instanceof ASTNodes.FunctionCall) {
             ASTNodes.FunctionCall call = (ASTNodes.FunctionCall) expr;
@@ -530,14 +557,11 @@ public class SemanticAnalyzer {
 
             ASTNodes.Type type = analyzeExpression(creation.arraySize,table);
             if (type.type != "int") {
-                throw new SemanticAnalyzerException("array size should be int but got " + type.type);
+                throw new SemanticAnalyzerException("array size should be int but got " + type);
             }
 
             ASTNodes.Type actualType = new ASTNodes.Type(creation.typeIdentifier, true);
             return actualType;
-        //} else if (expr instanceof ASTNodes.ObjectCreation) {
-            //ASTNodes.ObjectCreation creation = (ASTNodes.ObjectCreation) expr;
-            //return analyzeObjectCreation(creation,table);
         } else if (expr instanceof ASTNodes.MathExpr) {
             return analyzeMathExpr((ASTNodes.MathExpr) expr,table);
         } else if (expr instanceof ASTNodes.Comparison) {

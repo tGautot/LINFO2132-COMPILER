@@ -61,4 +61,15 @@ public class SymbolTable {
         return cur.table.get(key);
     }
 
+    public ASTNodes.Type remove(String key) throws SemanticAnalyzerException {
+        SymbolTable cur = this;
+        while (cur != null && !cur.table.containsKey(key)) {
+            cur = cur.prevTable;
+        }
+        if (cur == null) {
+            throw new SemanticAnalyzerException("unknown identifier : " + key);
+        }
+        return cur.table.remove(key);
+    }
+
 }
