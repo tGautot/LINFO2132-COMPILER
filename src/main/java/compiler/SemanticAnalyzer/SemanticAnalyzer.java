@@ -215,12 +215,11 @@ public class SemanticAnalyzer {
             ASTNodes.Type type = analyzeExpression(call.paramVals.get(i), table);
             if (call.identifier.equals("len")) {
                 if (type.isArray != true && !type.equals(new ASTNodes.Type("string",false))) {
-                    throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i) + " in function call " + call.identifier + ", got : "+type);
+                    throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
                 }
             } else {
                 if (!tParam.get(i).type.equals(type)) {
-                    throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i) + " in function call " + call.identifier + ", got : "+type);
-
+                    throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
                 }
             }
         }
@@ -294,7 +293,7 @@ public class SemanticAnalyzer {
         if (creation.valExpr != null) {
             ASTNodes.Type assignedType = analyzeExpression(creation.valExpr,table);
             if (!creation.type.equals(assignedType)) {
-                throw new SemanticAnalyzerException("tried to assign " + assignedType + " to a " + creation + " value");
+                throw new SemanticAnalyzerException("tried to assign " + assignedType + " to " + creation.type + " value " + creation.identifier);
             }
         }
     }
@@ -306,7 +305,7 @@ public class SemanticAnalyzer {
         if (creation.varExpr != null) {
             ASTNodes.Type type = analyzeExpression(creation.varExpr,table);
             if (!creation.type.equals(type)) {
-                throw new SemanticAnalyzerException("tried to assign " + type + " to a " + creation + " value");
+                throw new SemanticAnalyzerException("tried to assign " + type + " to " + creation.type + " variable " + creation.identifier);
 
             }
         }
@@ -324,8 +323,7 @@ public class SemanticAnalyzer {
         if (creation.initExpr != null) {
             ASTNodes.Type type = analyzeExpression(creation.initExpr,table);
             if (!creation.type.equals(type)) {
-                throw new SemanticAnalyzerException("tried to assign " + type + " to a " + creation + " const");
-
+                throw new SemanticAnalyzerException("tried to assign " + type + " to " + creation.type + " const " + creation.identifier);
             }
         }
     }
