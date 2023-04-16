@@ -551,41 +551,4 @@ public class SemanticAnalyzer {
 
         throw new SemanticAnalyzerException("unknown thing in analyzeExpression");
     }
-
-
-
-    public static void main(String[] args) throws ParserException {
-        String input = "record Point {\n" +
-                "    x int;\n" +
-                "    y int;\n" +
-                "}\n" +
-                "\n" +
-                "record Coord {\n" +
-                "    valeur int;\n" +
-                "    pt Point;\n" +
-                "}\n" +
-                "record Person {\n" +
-                "    name string;\n" +
-                "    location Coord;\n" +
-                "    history int[];\n" +
-                "}\n" +
-                "var a int = 3;\n" +
-                "val e int = a*2;\n" +
-                "var c int[] = int[](5);  \n" +
-                "var d Person = Person(\"me\", Coord(10,Point(3,7)), int[](a*2)); \n" +
-                "d.history[0]=1000\n";
-
-
-
-        StringReader reader = new StringReader(input);
-        Lexer lexer = new Lexer(reader);
-
-        Parser parser = new Parser(lexer);
-        ASTNodes.StatementList sl;
-        sl = parser.parseCode();
-
-
-        int k = 10;
-
-    }
 }

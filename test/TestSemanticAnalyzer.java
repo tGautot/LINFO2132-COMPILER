@@ -742,6 +742,10 @@ public class TestSemanticAnalyzer {
     }
 
 
+    /* write the code you want in simple_code_copie.txt and run this test
+       and check if the SemanticAnalyzer has the behaviour you expect based
+       on your input code
+     */
     @Test
     public void testCodeExample() throws IOException, SemanticAnalyzerException {
         Path filePath = Path.of("./test/simple_code_copie.txt");
