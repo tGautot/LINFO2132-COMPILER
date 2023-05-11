@@ -25,6 +25,8 @@ public class CodeGenerator<c> implements Opcodes{
 
     public Map<ASTNodes.Type,Class> typeClass;
 
+    public Map<String, Object> constValues;
+
     private ClassWriter cw;
 
     byte[] bytes;
@@ -38,6 +40,7 @@ public class CodeGenerator<c> implements Opcodes{
         this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         this.typeClass = new HashMap<>();
         this.typeString = new HashMap<>();
+        this.constValues = new HashMap<>();
 
         typeClass.put(new ASTNodes.Type("int",false), int.class);
         typeClass.put(new ASTNodes.Type("int",true), int[].class);
@@ -61,6 +64,16 @@ public class CodeGenerator<c> implements Opcodes{
 
         cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,"Main",null,"java/lang/Object",null);
 
+        for(ASTNodes.Statement stt : statementList.statements){
+            if(stt instanceof ASTNodes.ConstCreation){
+                Object val = evaluateConstExpr(((ASTNodes.ConstCreation) stt).initExpr);
+                System.out.println("Val is " + val);
+                constValues.put(((ASTNodes.ConstCreation) stt).identifier, val );
+                cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, ((ASTNodes.ConstCreation) stt).identifier,
+                        typeString.get(((ASTNodes.ConstCreation) stt).type), null, val );
+            }
+        }
+
         /*MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC ,"main","([Ljava/lang/String;)V",null,null);
         mv.visitCode();
 
@@ -80,7 +93,7 @@ public class CodeGenerator<c> implements Opcodes{
             }
         }*/
 
-        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC,"main","([Ljava/lang/String;)V",null,null);
+        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
 
         mv.visitCode();
 
@@ -106,7 +119,7 @@ public class CodeGenerator<c> implements Opcodes{
 
         // Write the bytes as a class file
         bytes = cw.toByteArray();  //concatWithArrayCopy(bytes,cw.toByteArray()); // cw.toByteArray();
-        try (FileOutputStream stream = new FileOutputStream("GeneratedClass.class")) {
+        try (FileOutputStream stream = new FileOutputStream("Main.class")) {
 
             stream.write(bytes);
         } catch (Exception e) {
@@ -125,6 +138,78 @@ public class CodeGenerator<c> implements Opcodes{
             e.printStackTrace();
         }*/
 
+    }
+
+    public Object directValToVal(ASTNodes.DirectValue dv){
+        if (dv.type.type.equals("int")) {
+            return Integer.parseInt(dv.value);
+        }
+        else if (dv.type.type.equals("real")) {
+            return Float.parseFloat(dv.value);
+        }
+        else if (dv.type.type.equals("bool")) {
+            return Boolean.parseBoolean(dv.value);
+        }
+        else {
+            return dv.value;
+        }
+    }
+    public Object evaluateConstExpr(ASTNodes.Expression initExpr) {
+        System.out.println("Evaluating " + initExpr);
+        if(initExpr instanceof ASTNodes.DirectValue){
+            return directValToVal((ASTNodes.DirectValue) initExpr);
+        }
+        if(initExpr instanceof ASTNodes.Identifier){
+            return constValues.get(((ASTNodes.Identifier) initExpr).id);
+        }
+        else{
+            if(initExpr instanceof ASTNodes.PrioExpr){
+                return evaluateConstExpr( ((ASTNodes.PrioExpr) initExpr).expr);
+            }
+            if(initExpr instanceof ASTNodes.AddExpr){
+                Object o1 = evaluateConstExpr(((ASTNodes.AddExpr) initExpr).expr1);
+                Object o2 = evaluateConstExpr(((ASTNodes.AddExpr) initExpr).expr2);
+                if(o1 instanceof Integer && o2 instanceof Integer) return ((Integer) o1) + ((Integer) o2);
+                if(o1 instanceof Float && o2 instanceof Integer)   return ((Float) o1) + ((Integer) o2).floatValue();
+                if(o1 instanceof Integer && o2 instanceof Float)   return ((Integer) o1).floatValue() + ((Float) o2);
+                if(o1 instanceof Float && o2 instanceof Float)     return ((Float) o1) + ((Float) o2);
+            }
+            if(initExpr instanceof ASTNodes.SubExpr){
+                Object o1 = evaluateConstExpr(((ASTNodes.SubExpr) initExpr).expr1);
+                Object o2 = evaluateConstExpr(((ASTNodes.SubExpr) initExpr).expr2);
+                if(o1 instanceof Integer && o2 instanceof Integer) return ((Integer) o1) - ((Integer) o2);
+                if(o1 instanceof Float && o2 instanceof Integer)   return ((Float) o1) - ((Integer) o2).floatValue();
+                if(o1 instanceof Integer && o2 instanceof Float)   return ((Integer) o1).floatValue() - ((Float) o2);
+                if(o1 instanceof Float && o2 instanceof Float)     return ((Float) o1) - ((Float) o2);
+            }
+            if(initExpr instanceof ASTNodes.MultExpr){
+                Object o1 = evaluateConstExpr(((ASTNodes.MultExpr) initExpr).expr1);
+                Object o2 = evaluateConstExpr(((ASTNodes.MultExpr) initExpr).expr2);
+                if(o1 instanceof Integer && o2 instanceof Integer) return ((Integer) o1) * ((Integer) o2);
+                if(o1 instanceof Float && o2 instanceof Integer)   return ((Float) o1) * ((Integer) o2).floatValue();
+                if(o1 instanceof Integer && o2 instanceof Float)   return ((Integer) o1).floatValue() * ((Float) o2);
+                if(o1 instanceof Float && o2 instanceof Float)     return ((Float) o1) * ((Float) o2);
+            }
+            if(initExpr instanceof ASTNodes.DivExpr){
+                Object o1 = evaluateConstExpr(((ASTNodes.DivExpr) initExpr).expr1);
+                Object o2 = evaluateConstExpr(((ASTNodes.DivExpr) initExpr).expr2);
+                if(o1 instanceof Integer && o2 instanceof Integer) return ((Integer) o1) / ((Integer) o2);
+                if(o1 instanceof Float && o2 instanceof Integer)   return ((Float) o1) / ((Integer) o2).floatValue();
+                if(o1 instanceof Integer && o2 instanceof Float)   return ((Integer) o1).floatValue() / ((Float) o2);
+                if(o1 instanceof Float && o2 instanceof Float)     return ((Float) o1) / ((Float) o2);
+            }
+            if(initExpr instanceof ASTNodes.ModExpr){
+                Object o1 = evaluateConstExpr(((ASTNodes.ModExpr) initExpr).expr1);
+                Object o2 = evaluateConstExpr(((ASTNodes.ModExpr) initExpr).expr2);
+                return ((Integer) o1) % ((Integer) o2);
+            }
+            if(initExpr instanceof ASTNodes.NegateExpr){
+                Object o1 = evaluateConstExpr(((ASTNodes.NegateExpr) initExpr).expr);
+                if(o1 instanceof Integer) return -((Integer) o1);
+                else return -((Float) o1);
+            }
+        }
+        return null;
     }
 
     static  byte[] concatWithArrayCopy(byte[] array1, byte[] array2) {
