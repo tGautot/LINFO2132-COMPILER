@@ -13,6 +13,8 @@ public class SemanticAnalyzer {
 
     public ASTNodes.StatementList statementList;
 
+    public int start;
+
     public SymbolTable symbolTable;
 
     public Map<String, ArrayList<ASTNodes.Param>> functionTable;
@@ -108,16 +110,21 @@ public class SemanticAnalyzer {
                 ASTNodes.ConstCreation creation = (ASTNodes.ConstCreation) s;
                 symbolTable.add(creation.identifier,creation.type);
                 analyzeConstCreation(creation,symbolTable);
-                statementList.statements.remove(i);
-                i--;
+                //statementList.statements.remove(i);
+                //i--;
+                start++;
             } else break;
         }
     }
 
     public void analyze(ASTNodes.StatementList statementList, SymbolTable table) throws SemanticAnalyzerException {
+        for (int i = start; i < statementList.statements.size(); i++) {
+            analyzeStatement(statementList.statements.get(i), table);
+        }
+        /*
         for (ASTNodes.Statement s : statementList.statements) {
             analyzeStatement(s,table);
-        }
+        }*/
     }
 
     public void analyzeStatement(ASTNodes.Statement s,SymbolTable table) throws SemanticAnalyzerException {
