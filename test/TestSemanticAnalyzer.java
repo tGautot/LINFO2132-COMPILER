@@ -21,6 +21,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testConstCreation() throws ParserException, SemanticAnalyzerException {
+        // correct input
         String input = "const a int = 3;\n";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
@@ -36,7 +37,8 @@ public class TestSemanticAnalyzer {
         analyzer.analyze(sl,analyzer.symbolTable);
 
         assertTrue(true);
-        //
+
+        // incorrect input
         input += "record Point {\n" +
                 "    x int;\n" +
                 "    y int;\n" +
@@ -61,6 +63,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testValCreation() throws SemanticAnalyzerException {
+        // correct input
         String input = "val a int = 3;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
@@ -77,7 +80,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // type void in a val
+        // incorrect input : type void in a val
         input = "val test void = 3";
         reader = new StringReader(input);
         lexer = new Lexer(reader);
@@ -98,6 +101,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testVarCreation() throws SemanticAnalyzerException {
+        // correct input
         String input = "var a int = 3;";
         StringReader reader = new StringReader(input);
         Lexer lexer = new Lexer(reader);
@@ -144,7 +148,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // input with error in 3rd loop
+        //incorrect input : error in 3rd loop
         input = "var i int = 0;\n" +
                 "var j int = 0;\n" +
                 "var k int = 0;\n" +
@@ -170,12 +174,12 @@ public class TestSemanticAnalyzer {
         ASTNodes.StatementList finalSl = sl;
         assertThrows(SemanticAnalyzerException.class,
                 ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
-        //analyzer.analyze(sl,analyzer.symbolTable);
 
     }
 
     @Test
     public void testWhileLoop() throws SemanticAnalyzerException {
+        // correct input
         String input = "while not(3<>4 and \"hello\"==\"hola\" or 3>7%4) {\n" +
                 "    var a int = 35\n" +
                 "}";
@@ -194,7 +198,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // incorrect condition in while
+        // incorrect input : condition in while
         input = "while 3<>4 and chr(78)+\"hola\" or 3>7%4 {\n" +
                 "    var a int = 35\n" +
                 "}";
@@ -217,6 +221,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testFunctionCall() throws SemanticAnalyzerException {
+        // correct input
         String input = "proc copyPoints(p Point,a int) Point {\n" +
                 "     return Point(square(p.x)/a, square(p.y)+a*a)\n" +
                 "}\n" +
@@ -246,7 +251,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // incorrect type for arg "a" in copyPoints
+        // incorrect input : type for arg "a" in copyPoints
         input = "proc copyPoints(p Point,a int) Point {\n" +
                 "     return Point(square(p.x)/a, square(p.y)+a*a)\n" +
                 "}\n" +
@@ -279,6 +284,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testVarAssign() throws SemanticAnalyzerException {
+        // correct input
         String input = "record Point {\n" +
                 "    x int;\n" +
                 "    y int;\n" +
@@ -323,7 +329,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // incorrect assign : real instead of int
+        // incorrect input : assign real instead of int
         input += "\n" +
                 "p.ref.ref.ref.tab[0] = -10.0;";
         reader = new StringReader(input);
@@ -346,6 +352,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testFunctionDef() throws SemanticAnalyzerException {
+        // correct input
         String input = "proc myfunc(a int, b real[], c bool) void {" +
                 "var aaa int[] = int[](7)" +
                 "}";
@@ -364,7 +371,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // correct function
+        // correct input
         input = "proc myfunc(a int, b real[], c bool) real[] {" +
                 "var aaa int[] = int[](7)" +
                 "b[0]=1.1" +
@@ -384,7 +391,7 @@ public class TestSemanticAnalyzer {
         assertTrue(true);
 
 
-        // void function returns something but should not
+        // incorrect input : void function returns something but should not
         input = "proc myfunc(a int, b real[], c bool) void {" +
                 "var aaa int[] = int[](7)" +
                 "return a" +
@@ -405,7 +412,7 @@ public class TestSemanticAnalyzer {
         assertThrows(SemanticAnalyzerException.class,
                 ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
 
-        // returns nothing but it should return
+        // incorrect input : returns nothing but it should return
         input = "proc myfunc(a int, b real[], c bool) int {" +
                 "var aaa int[] = int[](7)" +
                 "}";
@@ -425,7 +432,7 @@ public class TestSemanticAnalyzer {
         assertThrows(SemanticAnalyzerException.class,
                 ()-> finalAnalyzer1.analyze(finalSl1, finalAnalyzer1.symbolTable));
 
-        // returns the wrong type
+        // incorrect input returns the wrong type
         input = "proc myfunc(a int, b real[], c bool) int {" +
                 "var aaa int[] = int[](7)" +
                 "return c" +
@@ -449,6 +456,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testMathExpr() throws SemanticAnalyzerException {
+        // correct input
         String input = "var a int = (1+4+7%6)/(1*2-4--7)+floor(7.5)+-len(\"a\")\n" +
                 "var b real = (4.0+-11.2-4.6*7.0)/(47.9--7.1)";
         StringReader reader = new StringReader(input);
@@ -466,7 +474,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // incorrect
+        // incorrect input : wrong math expression
         String[] inputs = {"var a int = (1+4+7%6)/(1*2-4--7)+floor(7.5)*6.5+-len(\"a\")","var b real = (4.0+-11.2-4.6*7.0)/(47.9--7.1)%4.9"};
         for (String str : inputs) {
             reader = new StringReader(str);
@@ -488,6 +496,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testComparison() throws SemanticAnalyzerException {
+        // correct input
         String input = "\n" +
                 "proc square(v int) int {\n" +
                 "    return v*v;\n" +
@@ -512,7 +521,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // incorrect
+        // incorrect inputs
         String[] inputs = {"proc square(v float) float {\n" +
                 "    return v*v;\n" +
                 "}\n" +
@@ -549,6 +558,7 @@ public class TestSemanticAnalyzer {
 
     @Test
     public void testScope() throws SemanticAnalyzerException {
+        // correct input
         String input = "var x int = len(\"hello\")\n" +
                 "val y int = square(x)\n" +
                 "proc square(v int) int {\n" +
@@ -569,7 +579,7 @@ public class TestSemanticAnalyzer {
 
         assertTrue(true);
 
-        // incorrect
+        // incorrect inputs
         String[] inputs = {"proc square(v int) int {\n" +
                 "    return v*v;\n" +
                 "}\n" +
@@ -621,7 +631,7 @@ public class TestSemanticAnalyzer {
     }
 
     @Test public void testSymboleTable() throws IOException, SemanticAnalyzerException {
-
+        // correct input
         String input = "var i int = 0; \n" +
                 "var j int = 0;\n" +
                 "var k int = 0;\n" +
@@ -674,6 +684,7 @@ public class TestSemanticAnalyzer {
     }
 
     @Test public void testDoubleDefinition() throws IOException,SemanticAnalyzerException {
+        // correct input
         String input = "\n" +
                 "const a int = square(10)\n" +
                 "val b bool = not(true)\n" +
@@ -700,7 +711,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
         analyzer.analyze(sl,analyzer.symbolTable);
 
-        // incorrect
+        // incorrect inputs
         String[] inputs = {"\n" +
                 "const a int = square(10)\n" +
                 "val b bool = not(true)\n" +
