@@ -940,7 +940,7 @@ public class ASTNodes {
 
     // Shouldn't be used, represented in AST by going deeper
     static public class PrioExpr extends MathExpr {
-        Expression expr;
+        public Expression expr;
 
         public PrioExpr() {
         }

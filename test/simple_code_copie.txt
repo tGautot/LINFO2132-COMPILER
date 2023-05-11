@@ -1,32 +1,9 @@
-record A {
-    a int;
-    tab int[];
-    b B;
+const a int = 2;
+const b real = 10.0;
+const c real = 20.0;
+const d real = (b+c)/2.0;
+
+record Point {
+    x int;
+    y int;
 }
-
-record B {
-    a int;
-    tab int [];
-}
-
-var aaa A = A( 10,int[](5),B(20,int[](10)) )
-
-
-var x int = len("hello")
-var t int[]
-
-t[0]=10
-
-aaa.b.a = t[0]
-
-t = aaa.tab
-
-//var abc int[] = t+t
-
-//x=int[](4) error 
-
-//t[1]=int[](5) error
-
-
-
-
