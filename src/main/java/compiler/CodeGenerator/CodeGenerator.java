@@ -18,6 +18,7 @@ import compiler.parser.ASTNodes;
 
 public class CodeGenerator<c> implements Opcodes{
 
+    public String containerName = "Main";
 
     public ASTNodes.StatementList statementList;
 
@@ -29,6 +30,12 @@ public class CodeGenerator<c> implements Opcodes{
 
     private ClassWriter cw;
 
+    // Main Method visitor
+    private MethodVisitor mmv;
+
+    // Current method visitor
+    private MethodVisitor context;
+
     byte[] bytes;
 
 
@@ -36,6 +43,7 @@ public class CodeGenerator<c> implements Opcodes{
 
 
     public CodeGenerator(ASTNodes.StatementList statementList) {
+        System.out.println("LETSGO");
         this.statementList = statementList;
         this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         this.typeClass = new HashMap<>();
@@ -62,56 +70,31 @@ public class CodeGenerator<c> implements Opcodes{
         typeString.put(new ASTNodes.Type("string",true),"[Ljava/lang/String;");
         typeString.put(new ASTNodes.Type("void",false), "V");
 
-        cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,"Main",null,"java/lang/Object",null);
+    }
 
+    public org.objectweb.asm.Type typeToAsmType(ASTNodes.Type t){
+
+        if(typeString.containsKey(t)) return Type.getType(typeString.get(t));
+        // Is a struct
+        return Type.getType("L" + containerName + "/" + t.type);
+
+    }
+
+    public void generateCode(){
+        cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,containerName,null,"java/lang/Object",null);
+
+        // Main method visitor
+        mmv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
+
+        mmv.visitCode();
+        context = mmv;
         for(ASTNodes.Statement stt : statementList.statements){
-            if(stt instanceof ASTNodes.ConstCreation){
-                Object val = evaluateConstExpr(((ASTNodes.ConstCreation) stt).initExpr);
-                System.out.println("Val is " + val);
-                constValues.put(((ASTNodes.ConstCreation) stt).identifier, val );
-                cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, ((ASTNodes.ConstCreation) stt).identifier,
-                        typeString.get(((ASTNodes.ConstCreation) stt).type), null, val );
-            }
+            generateStatement(stt, mmv);
         }
 
-        /*MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC ,"main","([Ljava/lang/String;)V",null,null);
-        mv.visitCode();
+        mmv.visitMaxs(1, 1);
+        //mmv.visitEnd();
 
-        mv.visitFieldInsn(Opcodes.GETSTATIC,"java/lang/System","out","Ljava/io/PrintStream;");
-        mv.visitLdcInsn("hello");
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream","println","(Ljava/lang/String;)V",false);
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitEnd();
-        mv.visitMaxs(-1,-1);*/
-        // TODO plein de trucs
-
-        /*
-        for (ASTNodes.Statement s : statementList.statements) {
-            if (s instanceof ASTNodes.ConstCreation || s instanceof ASTNodes.ValCreation || s instanceof ASTNodes.VarCreation ||
-                s instanceof ASTNodes.FunctionDef || s instanceof ASTNodes.Record || s instanceof ASTNodes.VarAssign) {
-                generateStatement(s,null);
-            }
-        }*/
-
-        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
-
-        mv.visitCode();
-
-        mv.visitIntInsn(BIPUSH, 10);
-        mv.visitVarInsn(ISTORE, 1);
-        mv.visitIntInsn(BIPUSH, 20);
-        mv.visitVarInsn(ISTORE, 2);
-        mv.visitVarInsn(ILOAD, 1);
-        mv.visitVarInsn(ILOAD, 2);
-        mv.visitInsn(IMUL);
-        mv.visitVarInsn(ISTORE, 3);
-        mv.visitInsn(RETURN);
-
-        mv.visitMaxs(3, 3);
-
-        for (ASTNodes.Statement s : statementList.statements) {
-            generateStatement(s,mv);
-        }
 
         cw.visitEnd();
 
@@ -125,18 +108,6 @@ public class CodeGenerator<c> implements Opcodes{
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
-        /*bytes = cw.toByteArray();
-        ByteArrayClassLoader loader = new ByteArrayClassLoader();
-
-        Class<?> test = loader.defineClass("MainClass",bytes);
-
-        try {
-            test.getMethod("main",String[].class).invoke(null,(Object) new String[0]);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }*/
 
     }
 
@@ -218,22 +189,31 @@ public class CodeGenerator<c> implements Opcodes{
         return result;
     }
 
-    public void generateStatement(ASTNodes.Statement s,MethodVisitor mv) {
+    public void generateStatement(ASTNodes.Statement s,MethodVisitor mv){
         if (s instanceof ASTNodes.ConstCreation) {
             generateConst((ASTNodes.ConstCreation) s);
-        }
-        else if (s instanceof ASTNodes.ValCreation) {
-            generateVal((ASTNodes.ValCreation) s);
+        } else if (s instanceof ASTNodes.ValCreation) {
+            generateVal((ASTNodes.ValCreation) s, mv);
         } else if (s instanceof ASTNodes.VarCreation) {
-            generateVar((ASTNodes.VarCreation) s);
+            generateVar((ASTNodes.VarCreation) s, mv);
         } else if (s instanceof ASTNodes.FunctionDef) {
             generateFunctionDef((ASTNodes.FunctionDef) s);
         } else if (s instanceof ASTNodes.Record) {
             generateRecord((ASTNodes.Record) s);
+        } else if (s instanceof ASTNodes.ReturnExpr) {
+            generateReturn((ASTNodes.ReturnExpr) s, mv);
         }
     }
 
+    private void generateReturn(ASTNodes.ReturnExpr s, MethodVisitor mv)  {
+        System.out.println("Generating return");
+        generateExpression(s.expr, mv);
+        ASTNodes.Type returnType = s.expr.exprType;
+        mv.visitInsn(typeToAsmType(returnType).getOpcode(IRETURN));
+    }
+
     public void generateRecord(ASTNodes.Record record) {
+        System.out.println("Generating Record");
 
         // TODO later : I cant find a way to show in the "GeneratedClass" file the inner class
 
@@ -244,6 +224,7 @@ public class CodeGenerator<c> implements Opcodes{
 
 
     public void generateFunctionDef(ASTNodes.FunctionDef f) {
+        System.out.println("Generating FunctionDef");
         String params = "(";
         for (ASTNodes.Param p : f.paramList) {
             params += typeString.get(p.type);
@@ -260,132 +241,138 @@ public class CodeGenerator<c> implements Opcodes{
         mv.visitCode();
 
         // TODO : look at each statement of the function code and call the right generation function
-        /*
+
         for (ASTNodes.Statement s : f.functionCode.statements) {
-            generateStatement(s);
-        }*/
+            generateStatement(s, mv);
+        }
+        mv.visitEnd();
 
     }
 
-    public  void generateVar(ASTNodes.VarCreation creation) {
-        Object initval = null;
+    public  void generateVar(ASTNodes.VarCreation creation, MethodVisitor mv){
+        /*Object initval = null;
         if (creation.varExpr instanceof ASTNodes.DirectValue)
-            initval = generateExpression(creation.varExpr);
+            initval = generateExpression(creation.varExpr, mv);
 
         String type = typeString.get(creation.type);
         Class<?> c = typeClass.get(creation.type);
 
         cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,(c)initval).visitEnd();
-
-
-        /*
-        if (creation.type.type.equals("int")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "I",null,(int)initval).visitEnd();
-        }
-        if (creation.type.type.equals("real")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "F",null,(float)initval).visitEnd();
-        }
-        if (creation.type.type.equals("bool")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "Z",null,(boolean)initval).visitEnd();
-        }
-        if (creation.type.type.equals("string")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "Ljava/lang/String;",null,String.valueOf(initval)).visitEnd();
-        } else {
-            // TODO : creation is a record
-        }*/
+*/
     }
 
-    public void generateVal(ASTNodes.ValCreation creation) {
-        Object initval = generateExpression(creation.valExpr);
+    public void generateVal(ASTNodes.ValCreation creation, MethodVisitor mv){
+        /*Object initval = generateExpression(creation.valExpr, mv);
 
         String type = typeString.get(creation.type);
         Class<?> c = typeClass.get(creation.type);
 
-        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,(c)initval).visitEnd();
-
-
-
-        /*
-        if (creation.type.type.equals("int")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "I",null,(int)initval).visitEnd();
-        }
-        if (creation.type.type.equals("real")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "F",null,(float)initval).visitEnd();
-        }
-        if (creation.type.type.equals("bool")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "Z",null,(boolean)initval).visitEnd();
-        }
-        if (creation.type.type.equals("string")) {
-            String type = "Ljava/lang/String;";
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,String.valueOf(initval)).visitEnd();
-        } else {
-            // TODO : creation is a record
-        }*/
+        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,(c)initval).visitEnd();*/
     }
 
     public void generateConst(ASTNodes.ConstCreation creation) {
+        System.out.println("Generating const");
 
-        Object initval = generateExpression((ASTNodes.Expression) creation.initExpr);
+        Object val = evaluateConstExpr(creation.initExpr);
+        constValues.put(creation.identifier, val );
+        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, creation.identifier,
+                typeString.get(creation.type), null, val ).visitEnd();
 
-        String type = typeString.get(creation.type);
-        Class<?> c = typeClass.get(creation.type);
-
-        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,(c)initval).visitEnd();
-
-
-        /*
-
-        if (creation.type.type.equals("int")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "I",null,(int)initval).visitEnd();
-        }
-        if (creation.type.type.equals("real")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "F",null,(float)initval).visitEnd();
-        }
-        if (creation.type.type.equals("bool")) {
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, "Z",null,(boolean)initval).visitEnd();
-        }
-        if (creation.type.type.equals("string")) {
-            String type = "Ljava/lang/String;";
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,String.valueOf(initval)).visitEnd();
-        }*/
 
 
     }
 
-    public Object generateExpression(ASTNodes.Expression e) {
-        if (e == null) return null;
+    public void genereateIfStmt(ASTNodes.IfCond stt, MethodVisitor mv){
+        System.out.println("Generating IfStmt");
+        Label elseLabel = new Label();
+        Label endLabel = new Label();
+        boolean hasElse = stt.elseCodeBlock != null;
+        // TODO generate condition
+        mv.visitJumpInsn(IFEQ, hasElse ? elseLabel : endLabel);
+        stt.codeBlock.statements.forEach(s->generateStatement(s, mv));
+        if (hasElse) {
+            mv.visitJumpInsn(GOTO, endLabel);
+            mv.visitLabel(elseLabel);
+            stt.elseCodeBlock.statements.forEach(s->generateStatement(s, mv));
+        }
+        mv.visitLabel(endLabel);
+    }
 
+    public void generateExpression(ASTNodes.Expression e, MethodVisitor mv)  {
+        System.out.println("Generating Expression");
+        if (e == null) return;
         if (e instanceof ASTNodes.DirectValue) {
             ASTNodes.DirectValue val = (ASTNodes.DirectValue) e;
+            mv.visitLdcInsn(directValToVal(val));
 
-            if (val.type.type.equals("int")) {
-                return Integer.parseInt(val.value);
-            } else if (val.type.type.equals("string")) {
-                return val.value;
-            } else if (val.type.type.equals("real")) {
-                return Float.parseFloat(val.value);
-            } else {
-                return Boolean.parseBoolean(val.value);
-            }
+        } else if (e instanceof ASTNodes.Comparison) {
+            return;
+        } else if (e instanceof ASTNodes.MathExpr) {
+            generateMathExpr((ASTNodes.MathExpr) e, mv);
         }
-        // TODO
-        else if (e instanceof ASTNodes.MathExpr) {
-            return generateMathExpr((ASTNodes.MathExpr) e);
-        }
-        else {
-            return null;
-        }
+        return;
     }
 
-    public Object generateMathExpr(ASTNodes.MathExpr expr) {
+    public void generateMathExpr(ASTNodes.MathExpr expr, MethodVisitor mv) {
         if (expr instanceof ASTNodes.AddExpr) {
             ASTNodes.AddExpr addExpr = (ASTNodes.AddExpr) expr;
-
-
+            generateExpression(addExpr.expr1, mv);
+            generateExpression(addExpr.expr2, mv);
+            if(addExpr.expr1.exprType.type.equals("int")){
+                mv.visitInsn(Opcodes.IADD);
+            } else {
+                mv.visitInsn(Opcodes.FADD);
+            }
+        }
+        else if (expr instanceof ASTNodes.SubExpr) {
+            ASTNodes.SubExpr subExpr = (ASTNodes.SubExpr) expr;
+            generateExpression(subExpr.expr1, mv);
+            generateExpression(subExpr.expr2, mv);
+            if(subExpr.expr1.exprType.type.equals("int")){
+                mv.visitInsn(Opcodes.ISUB);
+            } else {
+                mv.visitInsn(Opcodes.FSUB);
+            }
+        }
+        else if (expr instanceof ASTNodes.MultExpr) {
+            ASTNodes.MultExpr multExpr = (ASTNodes.MultExpr) expr;
+            generateExpression(multExpr.expr1, mv);
+            generateExpression(multExpr.expr2, mv);
+            if(multExpr.expr1.exprType.type.equals("int")){
+                mv.visitInsn(Opcodes.IMUL);
+            } else {
+                mv.visitInsn(Opcodes.FMUL);
+            }
+        }
+        else if (expr instanceof ASTNodes.DivExpr) {
+            ASTNodes.DivExpr divExpr = (ASTNodes.DivExpr) expr;
+            generateExpression(divExpr.expr1, mv);
+            generateExpression(divExpr.expr2, mv);
+            if(divExpr.expr1.exprType.type.equals("int")){
+                mv.visitInsn(Opcodes.IDIV);
+            } else {
+                mv.visitInsn(Opcodes.FDIV);
+            }
+        }
+        else if (expr instanceof ASTNodes.ModExpr) {
+            ASTNodes.ModExpr modExpr = (ASTNodes.ModExpr) expr;
+            generateExpression(modExpr.expr1, mv);
+            generateExpression(modExpr.expr2, mv);
+            mv.visitInsn(Opcodes.IREM);
+        }
+        else if (expr instanceof ASTNodes.NegateExpr) {
+            ASTNodes.NegateExpr negExpr = (ASTNodes.NegateExpr) expr;
+            generateExpression(negExpr.expr, mv);
+            if(negExpr.expr.exprType.type.equals("int")){
+                mv.visitInsn(Opcodes.INEG);
+            } else {
+                mv.visitInsn(Opcodes.DNEG);
+            }
+        }
+        else {
+            System.out.println("!!! Unknown math expression " + expr);
         }
 
-
-        return null;
     }
 
     public static void main(String[] args) {

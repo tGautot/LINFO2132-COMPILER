@@ -7,3 +7,9 @@ record Point {
     x int;
     y int;
 }
+
+proc square(v int) int {
+    return v*v;
+}
+
+square(a);
