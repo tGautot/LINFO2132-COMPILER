@@ -1,5 +1,6 @@
 package compiler.CodeGenerator;
 
+import compiler.SemanticAnalyzer.SemanticAnalyzerException;
 import org.checkerframework.checker.units.qual.A;
 import org.objectweb.asm.*;
 
@@ -36,6 +37,8 @@ public class CodeGenerator<c> implements Opcodes{
     // Current method visitor
     private MethodVisitor context;
 
+    // Keeps track of idx of local variables
+    private SymbolIndexTable sit = new SymbolIndexTable();
     byte[] bytes;
 
 
@@ -87,12 +90,12 @@ public class CodeGenerator<c> implements Opcodes{
         mmv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
 
         mmv.visitCode();
-        context = mmv;
         for(ASTNodes.Statement stt : statementList.statements){
             generateStatement(stt, mmv);
         }
-
-        mmv.visitMaxs(1, 1);
+        mmv.visitInsn(RETURN);
+        mmv.visitEnd();
+        mmv.visitMaxs(-1, -1);
         //mmv.visitEnd();
 
 
@@ -202,6 +205,19 @@ public class CodeGenerator<c> implements Opcodes{
             generateRecord((ASTNodes.Record) s);
         } else if (s instanceof ASTNodes.ReturnExpr) {
             generateReturn((ASTNodes.ReturnExpr) s, mv);
+        } else if (s instanceof ASTNodes.FunctionCall){
+            generateFuncCall((ASTNodes.FunctionCall) s, mv);
+        }
+    }
+
+    private void generateFuncCall(ASTNodes.FunctionCall s, MethodVisitor mv) {
+        for(ASTNodes.Expression p : s.paramVals){
+            generateExpression(p, mv);
+        }
+        try {
+            mv.visitMethodInsn(INVOKESTATIC, containerName, s.identifier, sit.get(s.identifier).b, false);
+        } catch (SemanticAnalyzerException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -227,26 +243,37 @@ public class CodeGenerator<c> implements Opcodes{
         System.out.println("Generating FunctionDef");
         String params = "(";
         for (ASTNodes.Param p : f.paramList) {
-            params += typeString.get(p.type);
+            params += typeToAsmType(p.type).getDescriptor();
         }
         params += ")";
-        params += typeString.get(f.returnType);
+        params += typeToAsmType(f.returnType).getDescriptor();
 
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, f.identifier,params,null,null);
-
+        try {
+            sit.add(f.identifier, -1, params);
+        } catch (SemanticAnalyzerException e) {
+            throw new RuntimeException(e);
+        }
+        sit = new SymbolIndexTable(sit);
         // give the right names to the parameters
         for (int i = 0; i < f.paramList.size(); i++) {
-            mv.visitParameter(f.paramList.get(i).identifier, i);
+            //mv.visitParameter(f.paramList.get(i).identifier, 0);
+            try {
+                ASTNodes.Param p = f.paramList.get(i);
+                sit.add(p.identifier, i, typeToAsmType(p.type).getDescriptor()); // no +1 because 0 is not "this" because method is static
+            } catch (SemanticAnalyzerException e) {
+                throw new RuntimeException(e);
+            }
         }
+
         mv.visitCode();
-
-        // TODO : look at each statement of the function code and call the right generation function
-
         for (ASTNodes.Statement s : f.functionCode.statements) {
             generateStatement(s, mv);
         }
         mv.visitEnd();
+        mv.visitMaxs(-1,-1);
 
+        sit = sit.prevTable;
     }
 
     public  void generateVar(ASTNodes.VarCreation creation, MethodVisitor mv){
@@ -299,14 +326,27 @@ public class CodeGenerator<c> implements Opcodes{
     }
 
     public void generateExpression(ASTNodes.Expression e, MethodVisitor mv)  {
-        System.out.println("Generating Expression");
+        System.out.println("Generating Expression " + e);
         if (e == null) return;
         if (e instanceof ASTNodes.DirectValue) {
             ASTNodes.DirectValue val = (ASTNodes.DirectValue) e;
             mv.visitLdcInsn(directValToVal(val));
 
-        } else if (e instanceof ASTNodes.Comparison) {
-            return;
+        } else if (e instanceof ASTNodes.Identifier) {
+            ASTNodes.Identifier idt = ((ASTNodes.Identifier) e);
+            try {
+                if(!sit.contain(idt.id)){
+                    if(constValues.containsKey(idt.id)){
+                        mv.visitLdcInsn(constValues.get(idt.id));
+                    }
+                    return;
+                }
+                int lid = sit.get(idt.id).a;
+                mv.visitVarInsn(typeToAsmType(idt.exprType).getOpcode(ILOAD), lid);
+            } catch (SemanticAnalyzerException ex) {
+                throw new RuntimeException(ex);
+            }
+            //mv.visitFieldInsn(GETFIELD, containerName, idt.id, typeToAsmType(idt.exprType).getDescriptor());
         } else if (e instanceof ASTNodes.MathExpr) {
             generateMathExpr((ASTNodes.MathExpr) e, mv);
         }
