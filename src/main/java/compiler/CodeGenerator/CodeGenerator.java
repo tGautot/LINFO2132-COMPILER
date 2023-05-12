@@ -3,8 +3,10 @@ package compiler.CodeGenerator;
 import compiler.SemanticAnalyzer.SemanticAnalyzerException;
 import org.checkerframework.checker.units.qual.A;
 import org.objectweb.asm.*;
+import org.objectweb.asm.util.*;
 
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,9 +39,11 @@ public class CodeGenerator<c> implements Opcodes{
     // Current method visitor
     private MethodVisitor context;
 
-    // Keeps track of idx of local variables
+    // Keeps track of idx and desc of local variables
     private SymbolIndexTable sit = new SymbolIndexTable();
     byte[] bytes;
+
+    private Pair<Label, Label> currentScope;
 
 
     ArrayList<Pair<String, ClassWriter>> structs = new ArrayList<>();
@@ -88,11 +92,14 @@ public class CodeGenerator<c> implements Opcodes{
 
         // Main method visitor
         mmv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
-
+        Label beginLbl = new Label(); Label endLbl = new Label();
+        currentScope = new Pair(beginLbl, endLbl);
         mmv.visitCode();
+        mmv.visitLabel(beginLbl);
         for(ASTNodes.Statement stt : statementList.statements){
             generateStatement(stt, mmv);
         }
+        mmv.visitLabel(endLbl);
         mmv.visitInsn(RETURN);
         mmv.visitEnd();
         mmv.visitMaxs(-1, -1);
@@ -101,7 +108,8 @@ public class CodeGenerator<c> implements Opcodes{
 
         cw.visitEnd();
 
-
+        PrintWriter pw = new PrintWriter(System.out);
+        CheckClassAdapter.verify(new ClassReader(cw.toByteArray()), true, pw);
 
         // Write the bytes as a class file
         bytes = cw.toByteArray();  //concatWithArrayCopy(bytes,cw.toByteArray()); // cw.toByteArray();
@@ -207,10 +215,33 @@ public class CodeGenerator<c> implements Opcodes{
             generateReturn((ASTNodes.ReturnExpr) s, mv);
         } else if (s instanceof ASTNodes.FunctionCall){
             generateFuncCall((ASTNodes.FunctionCall) s, mv);
+        } else if (s instanceof ASTNodes.IfCond){
+            generateIfStmt((ASTNodes.IfCond) s, mv);
         }
     }
 
     private void generateFuncCall(ASTNodes.FunctionCall s, MethodVisitor mv) {
+        System.out.println("Generating FuncCall");
+
+        if(s.identifier.startsWith("write")){
+            String funcName = "";
+            String funcDesc = "";
+
+            if(s.identifier.endsWith( "ln")){ funcName = "println"; funcDesc = "(Ljava/lang/String;)V"; }
+            if(s.identifier.endsWith("ite")){ funcName = "print"; funcDesc = "(Ljava/lang/String;)V"; }
+            if(s.identifier.endsWith("Int")){ funcName = "println"; funcDesc = "(I)V"; }
+            if(s.identifier.endsWith("Real")){ funcName = "println"; funcDesc = "(F)V"; }
+
+            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out",
+                    "Ljava/io/PrintStream;");
+            for(ASTNodes.Expression p : s.paramVals){
+                generateExpression(p, mv);
+            }
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", funcName,
+                    funcDesc, false);
+            return;
+        }
+
         for(ASTNodes.Expression p : s.paramVals){
             generateExpression(p, mv);
         }
@@ -271,30 +302,45 @@ public class CodeGenerator<c> implements Opcodes{
             generateStatement(s, mv);
         }
         mv.visitEnd();
-        mv.visitMaxs(-1,-1);
+        //int nxtId = sit.nxtAvailableIndex();
+        mv.visitMaxs(-1, -1);
 
         sit = sit.prevTable;
     }
 
     public  void generateVar(ASTNodes.VarCreation creation, MethodVisitor mv){
-        /*Object initval = null;
-        if (creation.varExpr instanceof ASTNodes.DirectValue)
-            initval = generateExpression(creation.varExpr, mv);
+        System.out.println("Generating Var creation");
+        Type varType = typeToAsmType(creation.type);
+        String desc = varType.getDescriptor();
 
-        String type = typeString.get(creation.type);
-        Class<?> c = typeClass.get(creation.type);
+        if(mv == mmv){
+            // Currently in global code, use fields not local var
+            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
+            generateExpression(creation.varExpr, mv);
+            mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
 
-        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,(c)initval).visitEnd();
-*/
+
+        } else {
+            generateExpression(creation.varExpr, mv);
+            Integer idx = null;
+            try {
+                idx = sit.add(creation.identifier, desc);
+            } catch (SemanticAnalyzerException e) {
+                throw new RuntimeException(e);
+            }
+            mv.visitVarInsn(varType.getOpcode(ISTORE), idx);
+        }
+
     }
 
     public void generateVal(ASTNodes.ValCreation creation, MethodVisitor mv){
-        /*Object initval = generateExpression(creation.valExpr, mv);
-
-        String type = typeString.get(creation.type);
-        Class<?> c = typeClass.get(creation.type);
-
-        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, type,null,(c)initval).visitEnd();*/
+        System.out.println("Generating val creation");
+        // No difference between val and var after semantic analysis, just re-use code
+        ASTNodes.VarCreation equiv = new ASTNodes.VarCreation();
+        equiv.varExpr = creation.valExpr;
+        equiv.type = creation.type;
+        equiv.identifier = equiv.identifier;
+        generateVar(equiv, mv);
     }
 
     public void generateConst(ASTNodes.ConstCreation creation) {
@@ -309,12 +355,12 @@ public class CodeGenerator<c> implements Opcodes{
 
     }
 
-    public void genereateIfStmt(ASTNodes.IfCond stt, MethodVisitor mv){
+    public void generateIfStmt(ASTNodes.IfCond stt, MethodVisitor mv){
         System.out.println("Generating IfStmt");
         Label elseLabel = new Label();
         Label endLabel = new Label();
         boolean hasElse = stt.elseCodeBlock != null;
-        // TODO generate condition
+        generateExpression(stt.condition, mv);
         mv.visitJumpInsn(IFEQ, hasElse ? elseLabel : endLabel);
         stt.codeBlock.statements.forEach(s->generateStatement(s, mv));
         if (hasElse) {
@@ -326,6 +372,19 @@ public class CodeGenerator<c> implements Opcodes{
     }
 
     public void generateExpression(ASTNodes.Expression e, MethodVisitor mv)  {
+
+        /**
+         * TODO Expr
+         * [x] Direct Value
+         * [x] Identifier
+         * [ ] ArrayAcces
+         * [ ] ObjectAccess
+         * [x] MathExpr
+         * [x] Comparison
+         * [ ] ArrayCreation
+         * [x] ObjectCreation -> as function call
+         */
+
         System.out.println("Generating Expression " + e);
         if (e == null) return;
         if (e instanceof ASTNodes.DirectValue) {
@@ -334,23 +393,49 @@ public class CodeGenerator<c> implements Opcodes{
 
         } else if (e instanceof ASTNodes.Identifier) {
             ASTNodes.Identifier idt = ((ASTNodes.Identifier) e);
-            try {
-                if(!sit.contain(idt.id)){
-                    if(constValues.containsKey(idt.id)){
-                        mv.visitLdcInsn(constValues.get(idt.id));
-                    }
-                    return;
-                }
-                int lid = sit.get(idt.id).a;
-                mv.visitVarInsn(typeToAsmType(idt.exprType).getOpcode(ILOAD), lid);
-            } catch (SemanticAnalyzerException ex) {
-                throw new RuntimeException(ex);
-            }
-            //mv.visitFieldInsn(GETFIELD, containerName, idt.id, typeToAsmType(idt.exprType).getDescriptor());
+            generateIdentifier(idt, mv);
+        } else if (e instanceof ASTNodes.ArrayAccess) {
+            // TODO
+        } else if (e instanceof ASTNodes.ObjectAccess) {
+            // TODO
         } else if (e instanceof ASTNodes.MathExpr) {
             generateMathExpr((ASTNodes.MathExpr) e, mv);
+        } else if (e instanceof ASTNodes.Comparison){
+            generateComparison((ASTNodes.Comparison) e, mv);
+        } else if (e instanceof ASTNodes.ArrayCreation){
+            // TODO
+        } else if (e instanceof ASTNodes.ObjectCreation){
+            // TODO
+        } else if (e instanceof ASTNodes.FunctionCall){
+            generateFuncCall((ASTNodes.FunctionCall) e, mv);
+        } else {
+            System.out.println("--- Unexpected expression type " + e);
         }
+
+
+
         return;
+    }
+
+    public void generateIdentifier(ASTNodes.Identifier idt, MethodVisitor mv){
+        try {
+            if(!sit.contain(idt.id)){
+                if(constValues.containsKey(idt.id)){
+                    mv.visitLdcInsn(constValues.get(idt.id));
+                }
+                return;
+            }
+            Pair<Integer, String> pair = sit.get(idt.id);
+            int lid = pair.a; String desc = pair.b;
+            if(lid == -1){ // Not local var but field
+                mv.visitFieldInsn(GETFIELD, containerName, idt.id, desc);
+            }
+            else {
+                mv.visitVarInsn(Type.getType(desc).getOpcode(ILOAD), lid);
+            }
+        } catch (SemanticAnalyzerException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public void generateMathExpr(ASTNodes.MathExpr expr, MethodVisitor mv) {
@@ -358,41 +443,29 @@ public class CodeGenerator<c> implements Opcodes{
             ASTNodes.AddExpr addExpr = (ASTNodes.AddExpr) expr;
             generateExpression(addExpr.expr1, mv);
             generateExpression(addExpr.expr2, mv);
-            if(addExpr.expr1.exprType.type.equals("int")){
-                mv.visitInsn(Opcodes.IADD);
-            } else {
-                mv.visitInsn(Opcodes.FADD);
-            }
+            int oc = typeToAsmType(addExpr.expr1.exprType).getOpcode(IADD);
+            mv.visitInsn(oc);
         }
         else if (expr instanceof ASTNodes.SubExpr) {
             ASTNodes.SubExpr subExpr = (ASTNodes.SubExpr) expr;
             generateExpression(subExpr.expr1, mv);
             generateExpression(subExpr.expr2, mv);
-            if(subExpr.expr1.exprType.type.equals("int")){
-                mv.visitInsn(Opcodes.ISUB);
-            } else {
-                mv.visitInsn(Opcodes.FSUB);
-            }
+            int oc = typeToAsmType(subExpr.expr1.exprType).getOpcode(ISUB);
+            mv.visitInsn(oc);
         }
         else if (expr instanceof ASTNodes.MultExpr) {
             ASTNodes.MultExpr multExpr = (ASTNodes.MultExpr) expr;
             generateExpression(multExpr.expr1, mv);
             generateExpression(multExpr.expr2, mv);
-            if(multExpr.expr1.exprType.type.equals("int")){
-                mv.visitInsn(Opcodes.IMUL);
-            } else {
-                mv.visitInsn(Opcodes.FMUL);
-            }
+            int oc = typeToAsmType(multExpr.expr1.exprType).getOpcode(IMUL);
+            mv.visitInsn(oc);
         }
         else if (expr instanceof ASTNodes.DivExpr) {
             ASTNodes.DivExpr divExpr = (ASTNodes.DivExpr) expr;
             generateExpression(divExpr.expr1, mv);
             generateExpression(divExpr.expr2, mv);
-            if(divExpr.expr1.exprType.type.equals("int")){
-                mv.visitInsn(Opcodes.IDIV);
-            } else {
-                mv.visitInsn(Opcodes.FDIV);
-            }
+            int oc = typeToAsmType(divExpr.expr1.exprType).getOpcode(IDIV);
+            mv.visitInsn(oc);
         }
         else if (expr instanceof ASTNodes.ModExpr) {
             ASTNodes.ModExpr modExpr = (ASTNodes.ModExpr) expr;
@@ -403,16 +476,69 @@ public class CodeGenerator<c> implements Opcodes{
         else if (expr instanceof ASTNodes.NegateExpr) {
             ASTNodes.NegateExpr negExpr = (ASTNodes.NegateExpr) expr;
             generateExpression(negExpr.expr, mv);
-            if(negExpr.expr.exprType.type.equals("int")){
-                mv.visitInsn(Opcodes.INEG);
-            } else {
-                mv.visitInsn(Opcodes.DNEG);
-            }
+            int oc = typeToAsmType(negExpr.expr.exprType).getOpcode(INEG);
+            mv.visitInsn(oc);
         }
         else {
             System.out.println("!!! Unknown math expression " + expr);
         }
 
+    }
+
+    public void generateComparison(ASTNodes.Comparison comp, MethodVisitor mv){
+        System.out.println("Generating comparison");
+        generateExpression(comp.expr1, mv);
+        generateExpression(comp.expr2, mv);
+
+        if (comp instanceof ASTNodes.AndComp){
+            // Should put 1 if bot are 1
+            mv.visitInsn(IAND);
+            return;
+        }
+        if (comp instanceof ASTNodes.OrComp){
+            mv.visitInsn(IOR);
+            return;
+        }
+        boolean isInt = false;
+        if(comp.expr1.exprType.type.equals("int") || comp.expr1.exprType.type.equals("bool")){
+            isInt = true;
+        } else if (comp.expr1.exprType.type.equals("real")){
+            mv.visitInsn(FCMPG);
+        }
+        Label trueLbl = new Label();
+        Label falselbl = new Label();
+        Integer opcode = null;
+        if (! Arrays.asList(new String[]{"int", "real", "bool"}).contains(comp.expr1.exprType.type)){
+            if(comp instanceof ASTNodes.EqComp){
+                opcode =  IF_ACMPEQ;
+            } else if(comp instanceof ASTNodes.NotEqComp){
+                opcode = IF_ACMPNE;
+            } else {
+                System.out.println("--- Invalid comparison type between objects of type " + comp.expr1.exprType.type);
+            }
+        } else {
+            if (comp instanceof ASTNodes.EqComp) {
+                opcode = isInt ? IF_ICMPEQ : IFEQ;
+            } else if (comp instanceof ASTNodes.GrEqComp) {
+                opcode = isInt ? IF_ICMPGE : IFGE;
+            } else if (comp instanceof ASTNodes.GrComp) {
+                opcode = isInt ? IF_ICMPGT : IFGT;
+            } else if (comp instanceof ASTNodes.SmEqComp) {
+                opcode = isInt ? IF_ICMPLE : IFLE;
+            } else if (comp instanceof ASTNodes.SmComp) {
+                opcode = isInt ? IF_ICMPLT : IFLT;
+            } else if (comp instanceof ASTNodes.NotEqComp) {
+                opcode = isInt ? IF_ICMPNE : IFNE;
+            } else {
+                System.out.println("--- Unexpected comparison " + comp);
+            }
+        }
+        mv.visitJumpInsn(opcode, trueLbl);
+        mv.visitInsn(ICONST_0); // Load FALSE
+        mv.visitJumpInsn(GOTO, falselbl);
+        mv.visitLabel(trueLbl);
+        mv.visitInsn(ICONST_1); // Load TRUE
+        mv.visitLabel(falselbl);
     }
 
     public static void main(String[] args) {

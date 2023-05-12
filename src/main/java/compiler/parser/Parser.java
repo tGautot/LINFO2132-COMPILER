@@ -614,6 +614,7 @@ public class Parser {
         if(nxtToken != SymbolToken.CLOSE_CB){
             throw new ParserException("Expected `}` to close codeblock after `else` but got " + nxtToken);
         }
+        readSymbol();
         return node;
     }
 

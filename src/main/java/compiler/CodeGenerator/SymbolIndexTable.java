@@ -29,6 +29,15 @@ public class SymbolIndexTable {
             table.put(key,new Pair<>(idx, desc));
         }
 
+        public Integer add(String key, String desc) throws SemanticAnalyzerException {
+            Integer idx = this.nxtAvailableIndex();
+            if (table.containsKey(key)) {
+                throw new SemanticAnalyzerException("Same identifier : " + key + " for 2 differents things");
+            }
+            table.put(key,new Pair<>(idx, desc));
+            return idx;
+        }
+
         public void update(String key, Integer idx, String desc) throws SemanticAnalyzerException {
             compiler.CodeGenerator.SymbolIndexTable cur = this;
             while (cur != null && !cur.table.containsKey(key)) {
@@ -72,6 +81,16 @@ public class SymbolIndexTable {
                 throw new SemanticAnalyzerException("unknown identifier : " + key);
             }
             return cur.table.remove(key);
+        }
+
+        public Integer nxtAvailableIndex(){
+            int maxIdx = -1;
+            for (Map.Entry<String, Pair<Integer, String>> set :
+                    table.entrySet()) {
+                Integer newIdx = set.getValue().a;
+                maxIdx = (newIdx > maxIdx) ? newIdx : maxIdx;
+            }
+            return maxIdx+1;
         }
 
 

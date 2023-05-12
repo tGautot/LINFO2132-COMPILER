@@ -29,9 +29,9 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
 
     // to import ASM library
-    //implementation("org.ow2.asm:asm-all:5.2")
+    implementation("org.ow2.asm:asm-all:5.2")
 
-    implementation("org.ow2.asm:asm:9.5")
+    //implementation("org.ow2.asm:asm:9.5")
 }
 
 application {
