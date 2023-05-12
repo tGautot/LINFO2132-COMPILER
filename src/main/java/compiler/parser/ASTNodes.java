@@ -552,6 +552,7 @@ public class ASTNodes {
     }
 
     static public abstract class Expression extends Statement {
+        public Type exprType; // Will only be populated after semantic analysis
         @Override
         public abstract String toString();
     }

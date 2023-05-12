@@ -35,6 +35,7 @@ public class TestCodeGenerator {
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
         analyzer.analyze(sl,analyzer.symbolTable,true);
         CodeGenerator generator = new CodeGenerator(sl);
+        generator.generateCode();
 
         assertTrue(true);
     }

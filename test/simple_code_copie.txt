@@ -3,7 +3,11 @@ const b real = 10.0;
 const c real = 20.0;
 const d real = (b+c)/2.0;
 
-record Point {
-    x int;
-    y int;
+proc square(v int) int {
+    return v*v;
 }
+
+square(a);
+
+
+

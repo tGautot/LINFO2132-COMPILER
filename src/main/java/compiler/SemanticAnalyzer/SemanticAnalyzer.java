@@ -559,10 +559,10 @@ public class SemanticAnalyzer {
 
     public ASTNodes.Type analyzeExpression(ASTNodes.Expression expr, SymbolTable table) throws SemanticAnalyzerException {
         if (expr instanceof ASTNodes.DirectValue) {
-            return ((ASTNodes.DirectValue) expr).type;
+            return expr.exprType = ((ASTNodes.DirectValue) expr).type;
         } else if (expr instanceof ASTNodes.FunctionCall) {
             ASTNodes.FunctionCall call = (ASTNodes.FunctionCall) expr;
-            return analyzeFunctionCall(call,table);
+            return expr.exprType =  analyzeFunctionCall(call,table);
         } else if (expr instanceof ASTNodes.ArrayCreation) {
             ASTNodes.ArrayCreation creation = (ASTNodes.ArrayCreation) expr;
             if (creation.typeIdentifier.equals("void")) {
@@ -575,14 +575,14 @@ public class SemanticAnalyzer {
             }
 
             ASTNodes.Type actualType = new ASTNodes.Type(creation.typeIdentifier, true);
-            return actualType;
+            return expr.exprType =  actualType;
         } else if (expr instanceof ASTNodes.MathExpr) {
-            return analyzeMathExpr((ASTNodes.MathExpr) expr,table);
+            return expr.exprType =  analyzeMathExpr((ASTNodes.MathExpr) expr,table);
         } else if (expr instanceof ASTNodes.Comparison) {
-            return analyzeComparison((ASTNodes.Comparison) expr, table);
+            return expr.exprType =  analyzeComparison((ASTNodes.Comparison) expr, table);
         } else if (expr instanceof ASTNodes.RefToValue) {
             ASTNodes.RefToValue ref = (ASTNodes.RefToValue) expr;
-            return analyzeRefToValue(ref,table);
+            return expr.exprType =  analyzeRefToValue(ref,table);
         }
 
         throw new SemanticAnalyzerException("unknown thing in analyzeExpression");
