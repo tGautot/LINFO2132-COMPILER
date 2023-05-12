@@ -34,30 +34,38 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
-        // incorrect input
-        input += "record Point {\n" +
+
+        // incorrect inputs
+        String[] inputs = {"const a int = 3;\n" +
+                "\n" +
+                "record Point {\n" +
                 "    x int;\n" +
                 "    y int;\n" +
-                "}" +
-                "const test Point = Point(3,1)";
-        reader = new StringReader(input);
-        lexer = new Lexer(reader);
-        parser = new Parser(lexer);
-        try {
-            sl = parser.parseCode();
-        } catch (ParserException e) {
-            throw new RuntimeException(e);
-        }
+                "}\n" +
+                "const test Point = Point(3,4)",
+                "const a int = 3;\n" +
+                        "a = 10;"};
 
-        analyzer = new SemanticAnalyzer(sl);
-        SemanticAnalyzer finalAnalyzer = analyzer;
-        ASTNodes.StatementList finalSl = sl;
-        assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+        for (String str : inputs) {
+            reader = new StringReader(str);
+            lexer = new Lexer(reader);
+            parser = new Parser(lexer);
+            try {
+                sl = parser.parseCode();
+            } catch (ParserException e) {
+                throw new RuntimeException(e);
+            }
+
+            analyzer = new SemanticAnalyzer(sl);
+            SemanticAnalyzer finalAnalyzer1 = analyzer;
+            ASTNodes.StatementList finalSl1 = sl;
+            assertThrows(SemanticAnalyzerException.class,
+                    ()-> finalAnalyzer1.analyze(finalSl1, finalAnalyzer1.symbolTable,true));
+        }
 
     }
 
@@ -76,26 +84,32 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
-        // incorrect input : type void in a val
-        input = "val test void = 3";
-        reader = new StringReader(input);
-        lexer = new Lexer(reader);
-        parser = new Parser(lexer);
-        try {
-            sl = parser.parseCode();
-        } catch (ParserException e) {
-            throw new RuntimeException(e);
-        }
 
-        analyzer = new SemanticAnalyzer(sl);
-        SemanticAnalyzer finalAnalyzer = analyzer;
-        ASTNodes.StatementList finalSl = sl;
-        assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+        // incorrect inputs
+        String[] inputs = {"val test void = 3",
+                            "val a int = 3;\n" +
+                                    "a = 10;"};
+
+        for (String str : inputs) {
+            reader = new StringReader(str);
+            lexer = new Lexer(reader);
+            parser = new Parser(lexer);
+            try {
+                sl = parser.parseCode();
+            } catch (ParserException e) {
+                throw new RuntimeException(e);
+            }
+
+            analyzer = new SemanticAnalyzer(sl);
+            SemanticAnalyzer finalAnalyzer1 = analyzer;
+            ASTNodes.StatementList finalSl1 = sl;
+            assertThrows(SemanticAnalyzerException.class,
+                    ()-> finalAnalyzer1.analyze(finalSl1, finalAnalyzer1.symbolTable,true));
+        }
 
     }
 
@@ -114,7 +128,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
     }
@@ -144,7 +158,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -173,7 +187,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer finalAnalyzer = analyzer;
         ASTNodes.StatementList finalSl = sl;
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
 
     }
 
@@ -194,7 +208,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -215,7 +229,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer finalAnalyzer = analyzer;
         ASTNodes.StatementList finalSl = sl;
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
 
     }
 
@@ -247,7 +261,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -279,7 +293,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer finalAnalyzer = analyzer;
         ASTNodes.StatementList finalSl = sl;
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
     }
 
     @Test
@@ -325,7 +339,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -346,7 +360,7 @@ public class TestSemanticAnalyzer {
         ASTNodes.StatementList finalSl = sl;
 
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
 
     }
 
@@ -367,7 +381,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -387,7 +401,7 @@ public class TestSemanticAnalyzer {
         }
 
         analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
         assertTrue(true);
 
 
@@ -410,7 +424,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer finalAnalyzer = analyzer;
         ASTNodes.StatementList finalSl = sl;
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
 
         // incorrect input : returns nothing but it should return
         input = "proc myfunc(a int, b real[], c bool) int {" +
@@ -430,7 +444,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer finalAnalyzer1 = analyzer;
         ASTNodes.StatementList finalSl1 = sl;
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer1.analyze(finalSl1, finalAnalyzer1.symbolTable));
+                ()-> finalAnalyzer1.analyze(finalSl1, finalAnalyzer1.symbolTable,true));
 
         // incorrect input returns the wrong type
         input = "proc myfunc(a int, b real[], c bool) int {" +
@@ -450,7 +464,7 @@ public class TestSemanticAnalyzer {
         SemanticAnalyzer finalAnalyzer2 = analyzer;
         ASTNodes.StatementList finalSl2 = sl;
         assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer2.analyze(finalSl2, finalAnalyzer2.symbolTable));
+                ()-> finalAnalyzer2.analyze(finalSl2, finalAnalyzer2.symbolTable,true));
 
     }
 
@@ -470,7 +484,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -490,7 +504,7 @@ public class TestSemanticAnalyzer {
             SemanticAnalyzer finalAnalyzer = analyzer;
             ASTNodes.StatementList finalSl = sl;
             assertThrows(SemanticAnalyzerException.class,
-                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
         }
     }
 
@@ -517,7 +531,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -552,7 +566,7 @@ public class TestSemanticAnalyzer {
             SemanticAnalyzer finalAnalyzer = analyzer;
             ASTNodes.StatementList finalSl = sl;
             assertThrows(SemanticAnalyzerException.class,
-                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
         }
     }
 
@@ -575,7 +589,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
 
@@ -626,7 +640,7 @@ public class TestSemanticAnalyzer {
             SemanticAnalyzer finalAnalyzer = analyzer;
             ASTNodes.StatementList finalSl = sl;
             assertThrows(SemanticAnalyzerException.class,
-                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable));
+                    ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
         }
     }
 
@@ -661,7 +675,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         SymbolTable table = new SymbolTable();
         table.add("i",new ASTNodes.Type("int",false));
@@ -709,7 +723,7 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         // incorrect inputs
         String[] inputs = {"\n" +
@@ -772,7 +786,7 @@ public class TestSemanticAnalyzer {
             throw new RuntimeException(e);
         }
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
 
         assertTrue(true);
     }
