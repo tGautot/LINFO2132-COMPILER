@@ -191,6 +191,7 @@ public class CodeGenerator<c> implements Opcodes{
                 else return -((Float) o1);
             }
         }
+        // TODO evaluate comparison;
         return null;
     }
 
@@ -362,11 +363,15 @@ public class CodeGenerator<c> implements Opcodes{
         boolean hasElse = stt.elseCodeBlock != null;
         generateExpression(stt.condition, mv);
         mv.visitJumpInsn(IFEQ, hasElse ? elseLabel : endLabel);
+        sit = new SymbolIndexTable(sit);
         stt.codeBlock.statements.forEach(s->generateStatement(s, mv));
+        sit = sit.prevTable;
         if (hasElse) {
             mv.visitJumpInsn(GOTO, endLabel);
             mv.visitLabel(elseLabel);
+            sit = new SymbolIndexTable(sit);
             stt.elseCodeBlock.statements.forEach(s->generateStatement(s, mv));
+            sit = sit.prevTable;
         }
         mv.visitLabel(endLabel);
     }
