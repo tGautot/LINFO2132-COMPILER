@@ -11,8 +11,39 @@ record Point {
     idt Identity;
 }
 
+record History {
+    locs Point[];
+    idt Identity;
+}
+
+proc squarePoint(p Point) Point {
+    var newP Point = Point(
+        p.x*p.x,
+        p.y*p.y,
+        p.z*p.z,
+        Identity("Squared", p.idt.id + 1)
+    );
+    return newP;
+}
+
 var p Point = Point(5,6,7, Identity("Test", 0));
-writeInt(p.y);
+var p2 Point = squarePoint(p);
+var ps Point[] = Point[](2);
+
+ps[0] = p;
+ps[1] = p2;
+
+var hist History = History(ps, Identity("Hist", 0))
+
+var newPs Point[] = Point[](3);
+newPs[0] = ps[0];
+newPs[1] = ps[1];
+var newPointIdt Identity = Identity("NegPoint", -1);
+newPs[2] = Point(-1,-1,-1, newPointIdt);
+var newHistIdt Identity = Identity("Hist", hist.idt.id+1);
+hist = History(newPs, newHistIdt);
+
+writeInt(hist.locs[0].x);
 
 
 

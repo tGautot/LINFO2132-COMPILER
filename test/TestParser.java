@@ -364,7 +364,7 @@ public class TestParser {
     @Test
     public void testCodeExample() throws IOException {
         // This test is considered valid if the parser doesn't crash
-        Path filePath = Path.of("./test/simple_code.txt");
+        Path filePath = Path.of("./test/simple_code_copie.txt");
 
         String input = Files.readString(filePath);
         StringReader reader = new StringReader(input);

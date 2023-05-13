@@ -22,8 +22,8 @@ public class Logger {
 
     public void log(String message, Level l){
         // TODO do better than this
-        if(l == null) l = Level.NONE;
-        if(l == Level.NONE) return;
+        //if(l == null) l = Level.NONE;
+        //if(l == Level.NONE) return;
         System.out.println(message);
     }
 }
