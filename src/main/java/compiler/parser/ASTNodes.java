@@ -605,6 +605,7 @@ public class ASTNodes {
         @Override
         public String toString() {
             return "Identifier{" +
+                    "exprType=" + exprType + ", " +
                     "id='" + id + '\'' +
                     '}';
         }
@@ -690,21 +691,22 @@ public class ASTNodes {
     }
 
     static public class ArrayCreation extends Expression {
-        public String typeIdentifier;
+        public Type type;
         public Expression arraySize;
 
         public ArrayCreation() {
         }
 
         public ArrayCreation(String typeIdentifier, Expression arraySize) {
-            this.typeIdentifier = typeIdentifier;
+            this.type = new Type();
+            this.type.type = typeIdentifier;
             this.arraySize = arraySize;
         }
 
         @Override
         public String toString() {
             return "ArrayCreation{" + "\n" +
-                    "typeIdentifier='" + typeIdentifier + '\'' + "\n" +
+                    "type='" + type + '\'' + "\n" +
                     ", arraySize=" + arraySize + "\n" +
                     '}';
         }
@@ -714,12 +716,12 @@ public class ASTNodes {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ArrayCreation that = (ArrayCreation) o;
-            return Objects.equals(typeIdentifier, that.typeIdentifier) && Objects.equals(arraySize, that.arraySize);
+            return Objects.equals(type, that.type) && Objects.equals(arraySize, that.arraySize);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(typeIdentifier, arraySize);
+            return Objects.hash(type, arraySize);
         }
     }
 

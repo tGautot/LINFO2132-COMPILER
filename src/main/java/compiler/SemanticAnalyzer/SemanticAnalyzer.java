@@ -243,9 +243,12 @@ public class SemanticAnalyzer {
 
     public ASTNodes.Type analyzeRefToValue(ASTNodes.RefToValue ref, SymbolTable table) throws SemanticAnalyzerException {
         Stack<Object> stack = new Stack<>();
+        // Remembers the associated rtv object
+        Stack<ASTNodes.RefToValue> rtvStack = new Stack<>();
         ASTNodes.RefToValue cur = ref;
 
         while (!(cur instanceof ASTNodes.Identifier)) {
+            rtvStack.add(cur);
             if (cur instanceof ASTNodes.ArrayAccess) {
                 stack.add((Integer) 0);
                 cur = ((ASTNodes.ArrayAccess) cur).ref;
@@ -258,9 +261,10 @@ public class SemanticAnalyzer {
 
         String symbol = (String) stack.pop();
         ASTNodes.Type type = table.get(symbol);
-
+        cur.exprType = type;
         while (!stack.isEmpty()) {
             Object ele = stack.pop();
+            ASTNodes.RefToValue rtv = rtvStack.pop();
             if (ele instanceof String) {
                 if (functionTable.get(type.type) == null) {
                     throw new SemanticAnalyzerException("no record " + type.type);
@@ -281,6 +285,7 @@ public class SemanticAnalyzer {
                 // type is no more an array because 2D arrays not allowed
                 type = new ASTNodes.Type(type.type,false);
             }
+            rtv.exprType = type;
         }
 
         return type;
@@ -565,7 +570,7 @@ public class SemanticAnalyzer {
             return expr.exprType =  analyzeFunctionCall(call,table);
         } else if (expr instanceof ASTNodes.ArrayCreation) {
             ASTNodes.ArrayCreation creation = (ASTNodes.ArrayCreation) expr;
-            if (creation.typeIdentifier.equals("void")) {
+            if (creation.type.type.equals("void")) {
                 throw new SemanticAnalyzerException("void type not allowed for array");
             }
 
@@ -574,7 +579,7 @@ public class SemanticAnalyzer {
                 throw new SemanticAnalyzerException("array size should be int but got " + type);
             }
 
-            ASTNodes.Type actualType = new ASTNodes.Type(creation.typeIdentifier, true);
+            ASTNodes.Type actualType = new ASTNodes.Type(creation.type.type, true);
             return expr.exprType =  actualType;
         } else if (expr instanceof ASTNodes.MathExpr) {
             return expr.exprType =  analyzeMathExpr((ASTNodes.MathExpr) expr,table);

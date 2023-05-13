@@ -3,7 +3,7 @@ package compiler.CodeGenerator;
 import compiler.SemanticAnalyzer.SemanticAnalyzerException;
 import org.checkerframework.checker.units.qual.A;
 import org.objectweb.asm.*;
-import org.objectweb.asm.util.*;
+//import org.objectweb.asm.util.*;
 
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
@@ -31,6 +31,8 @@ public class CodeGenerator<c> implements Opcodes{
 
     public Map<String, Object> constValues;
 
+    public ArrayList<Pair<String, ClassWriter>> records;
+
     private ClassWriter cw;
 
     // Main Method visitor
@@ -52,10 +54,11 @@ public class CodeGenerator<c> implements Opcodes{
     public CodeGenerator(ASTNodes.StatementList statementList) {
         System.out.println("LETSGO");
         this.statementList = statementList;
-        this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         this.typeClass = new HashMap<>();
         this.typeString = new HashMap<>();
         this.constValues = new HashMap<>();
+        this.records = new ArrayList<>();
 
         typeClass.put(new ASTNodes.Type("int",false), int.class);
         typeClass.put(new ASTNodes.Type("int",true), int[].class);
@@ -83,11 +86,12 @@ public class CodeGenerator<c> implements Opcodes{
 
         if(typeString.containsKey(t)) return Type.getType(typeString.get(t));
         // Is a struct
-        return Type.getType("L" + containerName + "/" + t.type);
+        return Type.getType("L" + containerName + "$" + t.type + ";");
 
     }
 
     public void generateCode(){
+        records.add(new Pair<>("Main", cw));
         cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,containerName,null,"java/lang/Object",null);
 
         // Main method visitor
@@ -102,22 +106,24 @@ public class CodeGenerator<c> implements Opcodes{
         mmv.visitLabel(endLbl);
         mmv.visitInsn(RETURN);
         mmv.visitEnd();
-        mmv.visitMaxs(-1, -1);
+        //mmv.visitMaxs(-1, -1);
         //mmv.visitEnd();
 
 
         cw.visitEnd();
 
         PrintWriter pw = new PrintWriter(System.out);
-        CheckClassAdapter.verify(new ClassReader(cw.toByteArray()), true, pw);
+        //CheckClassAdapter.verify(new ClassReader(cw.toByteArray()), true, pw);
 
         // Write the bytes as a class file
-        bytes = cw.toByteArray();  //concatWithArrayCopy(bytes,cw.toByteArray()); // cw.toByteArray();
-        try (FileOutputStream stream = new FileOutputStream("Main.class")) {
+        for(Pair<String, ClassWriter> clazz : records) {
+            bytes = clazz.b.toByteArray();  //concatWithArrayCopy(bytes,cw.toByteArray()); // cw.toByteArray();
+            try (FileOutputStream stream = new FileOutputStream(clazz.a + ".class")) {
 
-            stream.write(bytes);
-        } catch (Exception e) {
-            e.printStackTrace();
+                stream.write(bytes);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
     }
@@ -218,6 +224,55 @@ public class CodeGenerator<c> implements Opcodes{
             generateFuncCall((ASTNodes.FunctionCall) s, mv);
         } else if (s instanceof ASTNodes.IfCond){
             generateIfStmt((ASTNodes.IfCond) s, mv);
+        } else if (s instanceof ASTNodes.VarAssign){
+            generateVarAssign((ASTNodes.VarAssign) s, mv);
+        }
+    }
+
+    private void generateRefToValue(ASTNodes.RefToValue rtv, MethodVisitor mv, boolean toStore, boolean topLvl){
+        System.out.println("Generating RefToValue");
+        if(rtv instanceof ASTNodes.Identifier){
+            generateIdentifier((ASTNodes.Identifier) rtv, mv, toStore && topLvl);
+        } else if(rtv instanceof ASTNodes.ArrayAccess){
+            ASTNodes.ArrayAccess aa = (ASTNodes.ArrayAccess) rtv;
+            generateRefToValue(aa.ref, mv, toStore, false);
+            generateExpression(aa.arrayIndex, mv);
+            Type owner = typeToAsmType(aa.ref.exprType);
+            if(!(topLvl && toStore))
+                mv.visitInsn(owner.getOpcode(IALOAD));
+        } else if(rtv instanceof ASTNodes.ObjectAccess){
+            ASTNodes.ObjectAccess oa = (ASTNodes.ObjectAccess) rtv;
+            generateRefToValue(oa.object, mv, toStore, false);
+            Type owner = typeToAsmType(oa.object.exprType);
+            Type currType = typeToAsmType(oa.exprType);
+            if(!(topLvl && toStore))
+                mv.visitFieldInsn(GETFIELD, owner.getInternalName(), oa.accessIdentifier, currType.getDescriptor());
+
+        }
+    }
+
+    private void generateVarAssign(ASTNodes.VarAssign va, MethodVisitor mv){
+        System.out.println("Generating Var assign");
+        if(va.ref instanceof ASTNodes.ObjectAccess){
+            generateRefToValue(va.ref, mv, true, true);
+            ASTNodes.ObjectAccess oa = (ASTNodes.ObjectAccess) va.ref;
+            Type owner = typeToAsmType(oa.object.exprType);
+            Type currType = typeToAsmType(oa.exprType);
+            generateExpression(va.value, mv);
+            mv.visitFieldInsn(PUTFIELD, owner.getInternalName(), oa.accessIdentifier, currType.getDescriptor());
+        }
+        else if(va.ref instanceof ASTNodes.ArrayAccess){
+            generateRefToValue(va.ref, mv, true, true);
+            ASTNodes.ArrayAccess aa = (ASTNodes.ArrayAccess) va.ref;
+            generateExpression(aa.arrayIndex, mv);
+            generateExpression(va.value, mv); // Val after index
+            Type owner = typeToAsmType(aa.ref.exprType);
+            mv.visitInsn(owner.getOpcode(IASTORE));
+        }
+        else {
+            ASTNodes.Identifier idt = (ASTNodes.Identifier) va.ref;
+            generateExpression(va.value, mv);
+            generateIdentifier(idt, mv, true);
         }
     }
 
@@ -228,7 +283,7 @@ public class CodeGenerator<c> implements Opcodes{
             String funcName = "";
             String funcDesc = "";
 
-            if(s.identifier.endsWith( "ln")){ funcName = "println"; funcDesc = "(Ljava/lang/String;)V"; }
+            if(s.identifier.endsWith("eln")){ funcName = "println"; funcDesc = "(Ljava/lang/String;)V"; }
             if(s.identifier.endsWith("ite")){ funcName = "print"; funcDesc = "(Ljava/lang/String;)V"; }
             if(s.identifier.endsWith("Int")){ funcName = "println"; funcDesc = "(I)V"; }
             if(s.identifier.endsWith("Real")){ funcName = "println"; funcDesc = "(F)V"; }
@@ -242,12 +297,29 @@ public class CodeGenerator<c> implements Opcodes{
                     funcDesc, false);
             return;
         }
-
-        for(ASTNodes.Expression p : s.paramVals){
-            generateExpression(p, mv);
-        }
         try {
-            mv.visitMethodInsn(INVOKESTATIC, containerName, s.identifier, sit.get(s.identifier).b, false);
+            Pair<Integer, String> p = sit.get(s.identifier);
+            String idtfr = s.identifier;
+            if(p.a == -2){
+                // Func call is record ceration
+                idtfr = containerName + "$" + idtfr;
+                mv.visitTypeInsn(NEW, idtfr);
+                mv.visitInsn(DUP);
+            }
+
+            for(ASTNodes.Expression param : s.paramVals){
+                generateExpression(param, mv);
+            }
+            Type idtType = Type.getType(p.b);
+
+            System.out.println("Calling function with type " + idtType.getDescriptor());
+            if(p.a == -2){
+                mv.visitMethodInsn(INVOKESPECIAL, idtfr, "<init>", p.b, false);
+                return;
+            }
+
+
+            mv.visitMethodInsn(INVOKESTATIC, containerName, idtfr, p.b, false);
         } catch (SemanticAnalyzerException e) {
             throw new RuntimeException(e);
         }
@@ -263,10 +335,45 @@ public class CodeGenerator<c> implements Opcodes{
     public void generateRecord(ASTNodes.Record record) {
         System.out.println("Generating Record");
 
-        // TODO later : I cant find a way to show in the "GeneratedClass" file the inner class
-
         ClassWriter new_cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        new_cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,record.identifier,null,"java/lang/Object",null);
+        String bn = containerName + "$" + record.identifier;
+        new_cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC | ACC_STATIC,bn,null,"java/lang/Object",null);
+
+        String constructorDesc = "";
+        for(ASTNodes.RecordVar rv : record.recordVars){
+            Type t = typeToAsmType(rv.type);
+            constructorDesc += t.getDescriptor();
+            new_cw.visitField(Opcodes.ACC_PUBLIC, rv.identifier, t.getDescriptor(), null, null );
+        }
+        constructorDesc = "(" + constructorDesc + ")V";
+        try {
+            sit.add(record.identifier, -2, constructorDesc);
+        } catch (SemanticAnalyzerException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("Constructor description: " + constructorDesc);
+        MethodVisitor init = new_cw.visitMethod(ACC_PUBLIC, "<init>", constructorDesc, null, null);
+        init.visitCode();
+        init.visitVarInsn(ALOAD, 0); // this
+        init.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        int i = 1;
+        for (ASTNodes.RecordVar rv: record.recordVars) {
+            init.visitVarInsn(ALOAD, 0);
+            Type t = typeToAsmType(rv.type);
+            init.visitVarInsn(t.getOpcode(ILOAD), i);
+            i += t.getSize();
+            init.visitFieldInsn(PUTFIELD, bn, Type.getType(rv.identifier).getInternalName(), typeToAsmType(rv.type).getDescriptor());
+        }
+        init.visitInsn(RETURN);
+
+        init.visitEnd();
+        init.visitMaxs(-1,-1);
+
+        new_cw.visitEnd();
+        new_cw.visitNestHost(containerName);
+        cw.visitInnerClass(bn,containerName, record.identifier, ACC_PUBLIC | ACC_STATIC);
+
+        records.add(new Pair<>(bn, new_cw));
 
     }
 
@@ -382,11 +489,11 @@ public class CodeGenerator<c> implements Opcodes{
          * TODO Expr
          * [x] Direct Value
          * [x] Identifier
-         * [ ] ArrayAcces
-         * [ ] ObjectAccess
+         * [x] ArrayAcces
+         * [x] ObjectAccess
          * [x] MathExpr
          * [x] Comparison
-         * [ ] ArrayCreation
+         * [x] ArrayCreation
          * [x] ObjectCreation -> as function call
          */
 
@@ -396,21 +503,17 @@ public class CodeGenerator<c> implements Opcodes{
             ASTNodes.DirectValue val = (ASTNodes.DirectValue) e;
             mv.visitLdcInsn(directValToVal(val));
 
-        } else if (e instanceof ASTNodes.Identifier) {
-            ASTNodes.Identifier idt = ((ASTNodes.Identifier) e);
-            generateIdentifier(idt, mv);
-        } else if (e instanceof ASTNodes.ArrayAccess) {
-            // TODO
-        } else if (e instanceof ASTNodes.ObjectAccess) {
-            // TODO
+        } else if (e instanceof ASTNodes.RefToValue) {
+            ASTNodes.RefToValue rtv = ((ASTNodes.RefToValue) e);
+            generateRefToValue(rtv, mv, false, true); // Cannot store from expression
         } else if (e instanceof ASTNodes.MathExpr) {
             generateMathExpr((ASTNodes.MathExpr) e, mv);
         } else if (e instanceof ASTNodes.Comparison){
             generateComparison((ASTNodes.Comparison) e, mv);
         } else if (e instanceof ASTNodes.ArrayCreation){
-            // TODO
+            generateArrayCreation((ASTNodes.ArrayCreation) e, mv);
         } else if (e instanceof ASTNodes.ObjectCreation){
-            // TODO
+            // No need
         } else if (e instanceof ASTNodes.FunctionCall){
             generateFuncCall((ASTNodes.FunctionCall) e, mv);
         } else {
@@ -422,10 +525,48 @@ public class CodeGenerator<c> implements Opcodes{
         return;
     }
 
-    public void generateIdentifier(ASTNodes.Identifier idt, MethodVisitor mv){
+    private void generateArrayAccess(ASTNodes.ArrayAccess a, MethodVisitor mv){
+        assert (a.ref instanceof ASTNodes.Identifier); // TODO dont assert this
+        ASTNodes.Identifier idt = (ASTNodes.Identifier) a.ref;
+        Pair<Integer, String> p;
+        try {
+             p = sit.get(idt.id);
+        } catch (SemanticAnalyzerException e) {
+            throw new RuntimeException(e);
+        }
+        Type t = Type.getType(p.b);
+        mv.visitVarInsn(t.getOpcode(ALOAD), p.a);
+        generateExpression(a.arrayIndex, mv);
+        mv.visitInsn(t.getOpcode(IALOAD));
+
+    }
+
+    private void generateArrayCreation(ASTNodes.ArrayCreation e, MethodVisitor mv) {
+        System.out.println("Generating array creation");
+        generateExpression(e.arraySize, mv);
+        if(e.type.type.equals("int")){
+            mv.visitIntInsn(NEWARRAY, T_INT);
+            return;
+        } else if (e.type.type.equals("real")){
+            mv.visitIntInsn(NEWARRAY, T_FLOAT);
+            return;
+        } else if (e.type.type.equals("bool")){
+            // Maybe problem with comparison since there bool are ints
+            mv.visitIntInsn(NEWARRAY, T_BOOLEAN);
+            return;
+        } else {
+            // Is a object, String or other
+            mv.visitTypeInsn(ANEWARRAY, typeToAsmType(e.type).getInternalName());
+        }
+    }
+
+    public void generateIdentifier(ASTNodes.Identifier idt, MethodVisitor mv, boolean toStore){
+        System.out.println("Generating Identifier (toStore: " + toStore + ")");
         try {
             if(!sit.contain(idt.id)){
+                System.out.println("Identifier " + idt.id + " not in SymbolIndexTable");
                 if(constValues.containsKey(idt.id)){
+                    assert(!toStore);
                     mv.visitLdcInsn(constValues.get(idt.id));
                 }
                 return;
@@ -433,10 +574,10 @@ public class CodeGenerator<c> implements Opcodes{
             Pair<Integer, String> pair = sit.get(idt.id);
             int lid = pair.a; String desc = pair.b;
             if(lid == -1){ // Not local var but field
-                mv.visitFieldInsn(GETFIELD, containerName, idt.id, desc);
+                mv.visitFieldInsn(toStore ? PUTSTATIC: GETSTATIC, containerName, idt.id, desc);
             }
             else {
-                mv.visitVarInsn(Type.getType(desc).getOpcode(ILOAD), lid);
+                mv.visitVarInsn(Type.getType(desc).getOpcode(toStore ? ISTORE : ILOAD), lid);
             }
         } catch (SemanticAnalyzerException ex) {
             throw new RuntimeException(ex);
