@@ -717,7 +717,7 @@ public class Parser {
 
         // Should have TypeToken in nxtToken
         ASTNodes.ArrayCreation node = new ASTNodes.ArrayCreation();
-        node.typeIdentifier = ((TypeToken) nxtToken).label;
+        node.type = new ASTNodes.Type(); node.type.type = ((TypeToken) nxtToken).label;
         readSymbol();
         if(nxtToken != SymbolToken.OPEN_BRACKET){
             throw new ParserException("Expected [ after type for array creation in expression but got " + nxtToken);

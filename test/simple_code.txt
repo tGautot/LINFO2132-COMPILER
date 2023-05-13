@@ -1,47 +1,31 @@
+const a real = 10.0;
+const b real = 20.0;
+const c real = (a+b)/2.0;
 
-const i int = 3;
-const j real = 3.2*5.0;
-const k int = i*3;
-const message string = "Hello";
-const isEmpty bool = true;
 
-record Point {
-    x int;
-    y int;
-}
-
-record Person {
-    name string;
-    location Point;
-    history int[];
-}
-
-var a int = 3;
-val e int = a*2;    // value
-
-var c int[] = int[](5);  // new array of length 5
-var d Person = Person("me", Point(3,7), int[](a*2));  // new record
+//record Point {
+//    x int;
+//    y int;
+//}
 
 
 proc square(v int) int {
+    v=v; v=v; v=v; v=v; // Tmp fix for SA bug
+    var d int = 5;
+    var e int = 6;
+    var f bool = d == e-1;
+    var arr int[] = int[](12);
+    if f==true {
+        writeln("oui");
+    } else {
+        writeln("non");
+    }
     return v*v;
 }
+var r Point = Point(5,6);
+writeInt(r.y);
+//writeInt(square(5));
 
-proc copyPoints(p Point[]) Point {
-     return Point(p[0].x+p[1].x, p[0].y+p[1].y)
-}
 
-proc main() void {
-    var value int = readInt();
-    writeln(square(value));
-    var i int;
-    for i=1 to 100 by 2 {
-        while value<>3 {
-            // ....
-        }
-    }
 
-    i = (i+2)*2
-}
 
-a[5][6][7] = 10

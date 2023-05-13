@@ -3,6 +3,7 @@ package compiler.CodeGenerator;
 import compiler.SemanticAnalyzer.SemanticAnalyzerException;
 import compiler.SemanticAnalyzer.SymbolTable;
 import compiler.parser.ASTNodes;
+import org.objectweb.asm.Type;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -85,12 +86,18 @@ public class SymbolIndexTable {
 
         public Integer nxtAvailableIndex(){
             int maxIdx = -1;
+            String highestIdDesc = "";
             for (Map.Entry<String, Pair<Integer, String>> set :
                     table.entrySet()) {
                 Integer newIdx = set.getValue().a;
-                maxIdx = (newIdx > maxIdx) ? newIdx : maxIdx;
+                if(newIdx > maxIdx) {
+                    maxIdx = (newIdx > maxIdx) ? newIdx : maxIdx;
+                    highestIdDesc = set.getValue().b;
+                }
             }
-            return maxIdx+1;
+            if(highestIdDesc.equals(""))
+                return maxIdx+1;
+            return maxIdx + Type.getType(highestIdDesc).getSize();
         }
 
 

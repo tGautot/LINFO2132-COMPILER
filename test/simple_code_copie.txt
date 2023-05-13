@@ -1,25 +1,13 @@
-const a real = 10.0;
-const b real = 20.0;
-const c real = (a+b)/2.0;
 
-
-
-
-
-proc square(v int) int {
-    v=v; v=v; v=v; v=v; // Tmp fix for SA bug
-    var d int = 5;
-    var e int = 6;
-    var f bool = d == e-1;
-    if f==true {
-        writeln("oui");
-    } else {
-        writeln("non");
-    }
-    return v*v;
+record Point {
+    x int;
+    y int;
+    z int;
 }
 
-writeInt(square(5));
+var r Point = Point(5,6,7);
+writeInt(r.y);
+
 
 
 
