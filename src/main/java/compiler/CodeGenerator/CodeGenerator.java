@@ -230,7 +230,7 @@ public class CodeGenerator<c> implements Opcodes{
     }
 
     private void generateRefToValue(ASTNodes.RefToValue rtv, MethodVisitor mv, boolean toStore, boolean topLvl){
-        System.out.println("Generating RefToValue");
+        System.out.println("Generating RefToValue " + rtv);
         if(rtv instanceof ASTNodes.Identifier){
             generateIdentifier((ASTNodes.Identifier) rtv, mv, toStore && topLvl);
         } else if(rtv instanceof ASTNodes.ArrayAccess){
@@ -342,7 +342,12 @@ public class CodeGenerator<c> implements Opcodes{
         String constructorDesc = "";
         for(ASTNodes.RecordVar rv : record.recordVars){
             Type t = typeToAsmType(rv.type);
-            constructorDesc += t.getDescriptor();
+            String tDesc = t.getDescriptor();
+            constructorDesc += tDesc;
+            if(tDesc.contains("$")){
+                // RecordVar is a struct
+                new_cw.visitInnerClass(tDesc, containerName, rv.type.type, ACC_PUBLIC | ACC_STATIC);
+            }
             new_cw.visitField(Opcodes.ACC_PUBLIC, rv.identifier, t.getDescriptor(), null, null );
         }
         constructorDesc = "(" + constructorDesc + ")V";
@@ -362,7 +367,8 @@ public class CodeGenerator<c> implements Opcodes{
             Type t = typeToAsmType(rv.type);
             init.visitVarInsn(t.getOpcode(ILOAD), i);
             i += t.getSize();
-            init.visitFieldInsn(PUTFIELD, bn, Type.getType(rv.identifier).getInternalName(), typeToAsmType(rv.type).getDescriptor());
+            init.visitFieldInsn(PUTFIELD, bn, rv.identifier, typeToAsmType(rv.type).getDescriptor());
+
         }
         init.visitInsn(RETURN);
 
@@ -371,8 +377,9 @@ public class CodeGenerator<c> implements Opcodes{
 
         new_cw.visitEnd();
         new_cw.visitNestHost(containerName);
+        new_cw.visitInnerClass(bn, containerName, record.identifier, ACC_PUBLIC | ACC_STATIC);
         cw.visitInnerClass(bn,containerName, record.identifier, ACC_PUBLIC | ACC_STATIC);
-
+        cw.visitNestMember(bn);
         records.add(new Pair<>(bn, new_cw));
 
     }
@@ -426,7 +433,11 @@ public class CodeGenerator<c> implements Opcodes{
             cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
             generateExpression(creation.varExpr, mv);
             mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
-
+            try {
+                sit.add(creation.identifier, -1, desc);
+            } catch (SemanticAnalyzerException e) {
+                throw new RuntimeException(e);
+            }
 
         } else {
             generateExpression(creation.varExpr, mv);

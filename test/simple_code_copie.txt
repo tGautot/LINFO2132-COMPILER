@@ -1,12 +1,18 @@
 
+record Identity {
+    name string;
+    id int;
+}
+
 record Point {
     x int;
     y int;
     z int;
+    idt Identity;
 }
 
-var r Point = Point(5,6,7);
-writeInt(r.y);
+var p Point = Point(5,6,7, Identity("Test", 0));
+writeInt(p.y);
 
 
 
