@@ -54,7 +54,7 @@ public class CodeGenerator<c> implements Opcodes{
     public CodeGenerator(ASTNodes.StatementList statementList) {
         System.out.println("LETSGO");
         this.statementList = statementList;
-        this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         this.typeClass = new HashMap<>();
         this.typeString = new HashMap<>();
         this.constValues = new HashMap<>();
@@ -86,7 +86,7 @@ public class CodeGenerator<c> implements Opcodes{
 
         if(typeString.containsKey(t)) return Type.getType(typeString.get(t));
         // Is a struct
-        return Type.getType("L" + containerName + "$" + t.type + ";");
+        return Type.getType( (t.isArray ? "[" : "") + "L" + containerName + "$" + t.type + ";");
 
     }
 
@@ -107,7 +107,7 @@ public class CodeGenerator<c> implements Opcodes{
         mmv.visitLabel(endLbl);
         mmv.visitInsn(RETURN);
         mmv.visitEnd();
-        //mmv.visitMaxs(-1, -1);
+        mmv.visitMaxs(-1, -1);
         //mmv.visitEnd();
 
 
@@ -327,7 +327,6 @@ public class CodeGenerator<c> implements Opcodes{
         else if(va.ref instanceof ASTNodes.ArrayAccess){
             generateRefToValue(va.ref, mv, true, true);
             ASTNodes.ArrayAccess aa = (ASTNodes.ArrayAccess) va.ref;
-            generateExpression(aa.arrayIndex, mv);
             generateExpression(va.value, mv); // Val after index
             Type owner = typeToAsmType(aa.ref.exprType);
             mv.visitInsn(owner.getOpcode(IASTORE));
@@ -409,7 +408,7 @@ public class CodeGenerator<c> implements Opcodes{
             constructorDesc += tDesc;
             if(tDesc.contains("$")){
                 // RecordVar is a struct
-                new_cw.visitInnerClass(tDesc, containerName, rv.type.type, ACC_PUBLIC | ACC_STATIC);
+                new_cw.visitInnerClass(containerName + "$" + rv.type.type, containerName, rv.type.type, ACC_PUBLIC | ACC_STATIC);
             }
             new_cw.visitField(Opcodes.ACC_PUBLIC, rv.identifier, t.getDescriptor(), null, null );
         }

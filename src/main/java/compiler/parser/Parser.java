@@ -26,13 +26,14 @@ import java.util.ArrayList;
  *
  */
 public class Parser {
-    Symbol nxtToken; Symbol lookAhead;
+    Symbol nxtToken; Symbol lookAhead; Symbol lookAhead2;
     Lexer lexer;
     Logger logger;
 
     public Parser(Lexer lexer){
         this.lexer = lexer;
         this.logger = Logger.getInstance();
+        readSymbol(); // Place first token in lookahead2
         readSymbol(); // Place first token in lookahead
         readSymbol(); // Place first token in nxtToken
     }
@@ -42,7 +43,8 @@ public class Parser {
      */
     private void readSymbol(){
         nxtToken = lookAhead;
-        lookAhead = lexer.getNextSymbol();
+        lookAhead = lookAhead2;
+        lookAhead2 = lexer.getNextSymbol();
     }
 
     /**
@@ -717,7 +719,12 @@ public class Parser {
 
         // Should have TypeToken in nxtToken
         ASTNodes.ArrayCreation node = new ASTNodes.ArrayCreation();
-        node.type = new ASTNodes.Type(); node.type.type = ((TypeToken) nxtToken).label;
+        node.type = new ASTNodes.Type();
+        if(nxtToken instanceof TypeToken)
+            node.type.type = ((TypeToken) nxtToken).label;
+        else
+            node.type.type = ((IdentifierToken) nxtToken).label;
+
         readSymbol();
         if(nxtToken != SymbolToken.OPEN_BRACKET){
             throw new ParserException("Expected [ after type for array creation in expression but got " + nxtToken);
@@ -939,10 +946,12 @@ public class Parser {
         logger.log("Parsing term " + nxtToken, null);
 
         if(nxtToken instanceof IdentifierToken){
-            if(lookAhead == SymbolToken.DOT || lookAhead == SymbolToken.OPEN_BRACKET){
+            if(lookAhead == SymbolToken.DOT || (lookAhead == SymbolToken.OPEN_BRACKET && lookAhead2 != SymbolToken.CLOSE_BRACKET)){
                 return parseRefToValue();
             } else if (lookAhead == SymbolToken.OPEN_PARENTHESIS) {
                 return parseFunctionCall();
+            } else if (lookAhead == SymbolToken.OPEN_BRACKET && lookAhead2 == SymbolToken.CLOSE_BRACKET) {
+                return parseArrayCreation();
             } else {
                 ASTNodes.Identifier node = new ASTNodes.Identifier();
                 node.id = ((IdentifierToken) nxtToken).label;
@@ -970,7 +979,7 @@ public class Parser {
             }
             readSymbol();
             return node;
-        } else if (nxtToken instanceof TypeToken) {
+        } else if (nxtToken instanceof TypeToken){
             // Array Creation
             return parseArrayCreation();
 
