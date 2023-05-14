@@ -293,7 +293,7 @@ public class CodeGenerator<c> implements Opcodes{
     }
 
     private void generateRefToValue(ASTNodes.RefToValue rtv, MethodVisitor mv, boolean toStore, boolean topLvl){
-        System.out.println("Generating RefToValue");
+        System.out.println("Generating RefToValue " + rtv);
         if(rtv instanceof ASTNodes.Identifier){
             generateIdentifier((ASTNodes.Identifier) rtv, mv, toStore && topLvl);
         } else if(rtv instanceof ASTNodes.ArrayAccess){
@@ -405,7 +405,12 @@ public class CodeGenerator<c> implements Opcodes{
         String constructorDesc = "";
         for(ASTNodes.RecordVar rv : record.recordVars){
             Type t = typeToAsmType(rv.type);
-            constructorDesc += t.getDescriptor();
+            String tDesc = t.getDescriptor();
+            constructorDesc += tDesc;
+            if(tDesc.contains("$")){
+                // RecordVar is a struct
+                new_cw.visitInnerClass(tDesc, containerName, rv.type.type, ACC_PUBLIC | ACC_STATIC);
+            }
             new_cw.visitField(Opcodes.ACC_PUBLIC, rv.identifier, t.getDescriptor(), null, null );
         }
         constructorDesc = "(" + constructorDesc + ")V";
@@ -425,7 +430,8 @@ public class CodeGenerator<c> implements Opcodes{
             Type t = typeToAsmType(rv.type);
             init.visitVarInsn(t.getOpcode(ILOAD), i);
             i += t.getSize();
-            init.visitFieldInsn(PUTFIELD, bn, Type.getType(rv.identifier).getInternalName(), typeToAsmType(rv.type).getDescriptor());
+            init.visitFieldInsn(PUTFIELD, bn, rv.identifier, typeToAsmType(rv.type).getDescriptor());
+
         }
         init.visitInsn(RETURN);
 
@@ -434,8 +440,9 @@ public class CodeGenerator<c> implements Opcodes{
 
         new_cw.visitEnd();
         new_cw.visitNestHost(containerName);
+        new_cw.visitInnerClass(bn, containerName, record.identifier, ACC_PUBLIC | ACC_STATIC);
         cw.visitInnerClass(bn,containerName, record.identifier, ACC_PUBLIC | ACC_STATIC);
-
+        cw.visitNestMember(bn);
         records.add(new Pair<>(bn, new_cw));
 
     }
@@ -486,17 +493,23 @@ public class CodeGenerator<c> implements Opcodes{
         String desc = varType.getDescriptor();
 
         if(mv == mmv){
-            try {
+            /*try {
                 Integer idx = sit.add(creation.identifier, desc);
             } catch (SemanticAnalyzerException e) {
                 throw new RuntimeException(e);
-            }
+            }*/
             // Currently in global code, use fields not local var
             cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
             generateExpression(creation.varExpr, mv);
             if (creation.varExpr != null)
                 mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
 
+            //mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
+            try {
+                sit.add(creation.identifier, -1, desc);
+            } catch (SemanticAnalyzerException e) {
+                throw new RuntimeException(e);
+            }
 
         } else {
             generateExpression(creation.varExpr, mv);
@@ -571,16 +584,32 @@ public class CodeGenerator<c> implements Opcodes{
         mv.visitLabel(endLabel);
     }
 
-    public void generateForLoop(ASTNodes.ForLoop stt, MethodVisitor mv) {
+    public void generateForLoop(ASTNodes.ForLoop stt, MethodVisitor mv)   {
         System.out.println("Generating for loop");
         Label startLabel = new Label();
         Label endLabel = new Label();
 
+        Pair<Integer, String> idx;
+        try {
+            idx = sit.get(((ASTNodes.Identifier)stt.loopVal).id);
+
+        } catch (SemanticAnalyzerException e) {
+            throw new RuntimeException(e);
+        }
+
+        ASTNodes.VarAssign assign = new ASTNodes.VarAssign();
+        assign.ref = stt.loopVal;
+        assign.value = stt.initValExpr;
+        generateVarAssign(assign,mv);
+
         mv.visitLabel(startLabel);
 
-        // deal with condition
-        generateExpression(stt.initValExpr,mv);
-        generateExpression(stt.endValExpr,mv);
+        if (idx.a != -1) {
+            mv.visitVarInsn(ILOAD, idx.a);
+        } else {
+            mv.visitFieldInsn(GETSTATIC,containerName, ((ASTNodes.Identifier)stt.loopVal).id, "I");
+        }
+        generateExpression(stt.endValExpr, mv);
         mv.visitJumpInsn(IF_ICMPGE,endLabel);
 
         // loop body
@@ -589,6 +618,18 @@ public class CodeGenerator<c> implements Opcodes{
         sit = sit.prevTable;
 
         // increment
+        if (idx.a != -1) {
+            mv.visitVarInsn(ILOAD, idx.a);
+            generateExpression(stt.increment, mv);
+            mv.visitInsn(IADD);
+            mv.visitVarInsn(ISTORE, idx.a);
+        }
+        else {
+            mv.visitFieldInsn(GETSTATIC,containerName,((ASTNodes.Identifier)stt.loopVal).id,"I");
+            generateExpression(stt.increment,mv);
+            mv.visitInsn(IADD);
+            mv.visitFieldInsn(PUTSTATIC,containerName, ((ASTNodes.Identifier)stt.loopVal).id, "I");
+        }
 
 
         mv.visitJumpInsn(GOTO,startLabel);
