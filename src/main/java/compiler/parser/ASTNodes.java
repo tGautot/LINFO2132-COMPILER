@@ -557,6 +557,24 @@ public class ASTNodes {
         public abstract String toString();
     }
 
+    static public class NullExpr extends Expression{
+        NullExpr(){
+            this.exprType = new Type("void", false);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "NullExpr";
+        }
+    }
+
     public static class DirectValue extends Expression {
         public String value;
         public Type type;

@@ -16,6 +16,10 @@ record History {
     idt Identity;
 }
 
+proc printHello() void {
+    writeln("Hello");
+}
+
 proc squarePoint(p Point) Point {
     var newP Point = Point(
         p.x*p.x,

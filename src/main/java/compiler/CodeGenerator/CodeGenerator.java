@@ -14,7 +14,7 @@ import java.util.*;
 import compiler.parser.ASTNodes;
 
 
-public class CodeGenerator<c> implements Opcodes{
+public class CodeGenerator implements Opcodes{
 
     public String containerName = "Main";
 
@@ -113,7 +113,7 @@ public class CodeGenerator<c> implements Opcodes{
 
         // Write the bytes as a class file
         for(Pair<String, ClassWriter> clazz : records) {
-            bytes = clazz.b.toByteArray();  //concatWithArrayCopy(bytes,cw.toByteArray()); // cw.toByteArray();
+            bytes = clazz.b.toByteArray();
             try (FileOutputStream stream = new FileOutputStream(clazz.a + ".class")) {
 
                 stream.write(bytes);
@@ -203,42 +203,42 @@ public class CodeGenerator<c> implements Opcodes{
             if(initExpr instanceof ASTNodes.NotEqComp){
                 Object o1 = evaluateConstExpr(((ASTNodes.NotEqComp) initExpr).expr1);
                 Object o2 = evaluateConstExpr(((ASTNodes.NotEqComp) initExpr).expr2);
-                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) == ((Integer) o2));
-                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) == ((Integer) o2).floatValue());
-                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() == ((Float) o2));
-                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) == ((Float) o2));
+                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) != ((Integer) o2));
+                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) != ((Integer) o2).floatValue());
+                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() != ((Float) o2));
+                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) != ((Float) o2));
             }
             if(initExpr instanceof ASTNodes.GrComp){
                 Object o1 = evaluateConstExpr(((ASTNodes.GrComp) initExpr).expr1);
                 Object o2 = evaluateConstExpr(((ASTNodes.GrComp) initExpr).expr2);
-                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) == ((Integer) o2));
-                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) == ((Integer) o2).floatValue());
-                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() == ((Float) o2));
-                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) == ((Float) o2));
+                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) > ((Integer) o2));
+                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) > ((Integer) o2).floatValue());
+                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() > ((Float) o2));
+                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) > ((Float) o2));
             }
             if(initExpr instanceof ASTNodes.SmComp){
                 Object o1 = evaluateConstExpr(((ASTNodes.SmComp) initExpr).expr1);
                 Object o2 = evaluateConstExpr(((ASTNodes.SmComp) initExpr).expr2);
-                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) == ((Integer) o2));
-                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) == ((Integer) o2).floatValue());
-                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() == ((Float) o2));
-                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) == ((Float) o2));
+                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) < ((Integer) o2));
+                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) < ((Integer) o2).floatValue());
+                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() < ((Float) o2));
+                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) < ((Float) o2));
             }
             if(initExpr instanceof ASTNodes.GrEqComp){
                 Object o1 = evaluateConstExpr(((ASTNodes.GrEqComp) initExpr).expr1);
                 Object o2 = evaluateConstExpr(((ASTNodes.GrEqComp) initExpr).expr2);
-                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) == ((Integer) o2));
-                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) == ((Integer) o2).floatValue());
-                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() == ((Float) o2));
-                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) == ((Float) o2));
+                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) >= ((Integer) o2));
+                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) >= ((Integer) o2).floatValue());
+                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() >= ((Float) o2));
+                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) >= ((Float) o2));
             }
             if(initExpr instanceof ASTNodes.SmEqComp){
                 Object o1 = evaluateConstExpr(((ASTNodes.SmEqComp) initExpr).expr1);
                 Object o2 = evaluateConstExpr(((ASTNodes.SmEqComp) initExpr).expr2);
-                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) == ((Integer) o2));
-                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) == ((Integer) o2).floatValue());
-                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() == ((Float) o2));
-                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) == ((Float) o2));
+                if(o1 instanceof Integer && o2 instanceof Integer) return (((Integer) o1) <= ((Integer) o2));
+                if(o1 instanceof Float && o2 instanceof Integer)   return (((Float) o1) <= ((Integer) o2).floatValue());
+                if(o1 instanceof Integer && o2 instanceof Float)   return (((Integer) o1).floatValue() <= ((Float) o2));
+                if(o1 instanceof Float && o2 instanceof Float)     return (((Float) o1) <= ((Float) o2));
             }
             if(initExpr instanceof ASTNodes.AndComp){
                 Object o1 = evaluateConstExpr(((ASTNodes.AndComp) initExpr).expr1);
@@ -251,15 +251,9 @@ public class CodeGenerator<c> implements Opcodes{
                 return (((Boolean) o1) || ((Boolean) o2));
             }
         }
-        // TODO evaluate comparison;
         return null;
     }
 
-    static  byte[] concatWithArrayCopy(byte[] array1, byte[] array2) {
-        byte[] result = Arrays.copyOf(array1, array1.length + array2.length);
-        System.arraycopy(array2, 0, result, array1.length, array2.length);
-        return result;
-    }
 
     public void generateStatement(ASTNodes.Statement s,MethodVisitor mv){
         if (s instanceof ASTNodes.ConstCreation) {
@@ -523,7 +517,7 @@ public class CodeGenerator<c> implements Opcodes{
         for (ASTNodes.Statement s : f.functionCode.statements) {
             generateStatement(s, mv);
         }
-        if (f.returnType.type.equals("void")){
+        if(f.returnType.type.equals("void")){
             mv.visitInsn(RETURN);
         }
         mv.visitEnd();
@@ -540,18 +534,13 @@ public class CodeGenerator<c> implements Opcodes{
         String desc = varType.getDescriptor();
 
         if(mv == mmv){
-            /*try {
-                Integer idx = sit.add(creation.identifier, desc);
-            } catch (SemanticAnalyzerException e) {
-                throw new RuntimeException(e);
-            }*/
+
             // Currently in global code, use fields not local var
             cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
             generateExpression(creation.varExpr, mv);
             if (creation.varExpr != null)
                 mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
 
-            //mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
             try {
                 sit.add(creation.identifier, -1, desc);
             } catch (SemanticAnalyzerException e) {
@@ -686,18 +675,6 @@ public class CodeGenerator<c> implements Opcodes{
 
     public void generateExpression(ASTNodes.Expression e, MethodVisitor mv)  {
 
-        /**
-         * TODO Expr
-         * [x] Direct Value
-         * [x] Identifier
-         * [x] ArrayAcces
-         * [x] ObjectAccess
-         * [x] MathExpr
-         * [x] Comparison
-         * [x] ArrayCreation
-         * [x] ObjectCreation -> as function call
-         */
-
         System.out.println("Generating Expression " + e);
         if (e == null) return;
         if (e instanceof ASTNodes.DirectValue) {
@@ -720,9 +697,6 @@ public class CodeGenerator<c> implements Opcodes{
         } else {
             System.out.println("--- Unexpected expression type " + e);
         }
-
-
-
         return;
     }
 
@@ -774,14 +748,13 @@ public class CodeGenerator<c> implements Opcodes{
                 } else {
                     Pair<Integer, String> pair = sit.get(idt.id);
                     int lid = pair.a; String desc = pair.b;
-                    mv.visitFieldInsn(GETSTATIC, containerName, idt.id, desc); // GETFIELD
+                    mv.visitFieldInsn(GETSTATIC, containerName, idt.id, desc);
                 }
                 return;
             }
             Pair<Integer, String> pair = sit.get(idt.id);
             int lid = pair.a; String desc = pair.b;
             if(lid == -1){ // Not local var but field
-                //mv.visitFieldInsn(GETFIELD, containerName, idt.id, desc); // GETFIELD
                 mv.visitFieldInsn(toStore ? PUTSTATIC: GETSTATIC, containerName, idt.id, desc);
             }
             else {
@@ -896,15 +869,6 @@ public class CodeGenerator<c> implements Opcodes{
     }
 
     public static void main(String[] args) {
-/*
-        int i = 0;
-        new Scanner;
-        int v = System.in.nextInt();
-        new Scanner;
-        String s = System.in.next();
-        new Scanner;
-        Float f = System.in.nextFloat();
 
- */
     }
 }
