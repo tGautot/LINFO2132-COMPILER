@@ -478,6 +478,9 @@ public class CodeGenerator<c> implements Opcodes{
         for (ASTNodes.Statement s : f.functionCode.statements) {
             generateStatement(s, mv);
         }
+        if(f.returnType.type.equals("void")){
+            mv.visitInsn(RETURN);
+        }
         mv.visitEnd();
         //int nxtId = sit.nxtAvailableIndex();
         mv.visitMaxs(-1, -1);

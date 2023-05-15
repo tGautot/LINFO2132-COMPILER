@@ -560,6 +560,10 @@ public class Parser {
 
         readSymbol();
         ASTNodes.ReturnExpr node = new ASTNodes.ReturnExpr();
+        node.expr = new ASTNodes.NullExpr();
+        if(nxtToken == SymbolToken.SEMICOLON){
+            return node;
+        }
         node.expr = parseExpression();
         /*if(nxtToken != SymbolToken.SEMICOLON){
             throw new ParserException("Expected `;` after return statement but got " + nxtToken);

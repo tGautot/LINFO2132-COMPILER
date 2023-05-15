@@ -369,9 +369,9 @@ public class SemanticAnalyzer {
         ASTNodes.Type type = functionDef.returnType;
         ASTNodes.StatementList block = functionDef.functionCode;
         if (type.equals(new ASTNodes.Type("void",false))) {
-            if (block.statements.get(block.statements.size()-1) instanceof ASTNodes.ReturnExpr) {
+            /*if (( (ASTNodes.ReturnExpr) block.statements.get(block.statements.size()-1)).expr != null ) {
                 throw new SemanticAnalyzerException("void function " + functionDef.identifier +  "cannot return anything");
-            }
+            }*/
             for (ASTNodes.Param p: functionDef.paramList) {
                 table.add(p.identifier,p.type);
             }
@@ -588,6 +588,8 @@ public class SemanticAnalyzer {
         } else if (expr instanceof ASTNodes.RefToValue) {
             ASTNodes.RefToValue ref = (ASTNodes.RefToValue) expr;
             return expr.exprType =  analyzeRefToValue(ref,table);
+        } else if (expr instanceof ASTNodes.NullExpr){
+            return new ASTNodes.Type("void", false);
         }
 
         throw new SemanticAnalyzerException("unknown thing in analyzeExpression");
