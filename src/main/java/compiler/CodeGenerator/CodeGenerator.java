@@ -8,12 +8,7 @@ import org.objectweb.asm.*;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-
+import java.util.*;
 
 
 import compiler.parser.ASTNodes;
@@ -359,6 +354,50 @@ public class CodeGenerator<c> implements Opcodes{
                     funcDesc, false);
             return;
         }
+        if(s.identifier.startsWith("read")){
+            String funcName = "";
+            String funcDesc = "";
+
+            if(s.identifier.endsWith("Int")){ funcName = "nextInt"; funcDesc = "()I"; }
+            if(s.identifier.endsWith("Real")){ funcName = "nextFloat"; funcDesc = "()F"; }
+            if(s.identifier.endsWith("String")){ funcName = "next"; funcDesc = "()Ljava/lang/String;"; }
+
+
+            mv.visitTypeInsn(Opcodes.NEW, "java/util/Scanner");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", funcName, funcDesc, false);
+
+
+
+            return;
+        }
+        if (s.identifier.equals("not")) {
+            generateExpression(s.paramVals.get(0),mv);
+            mv.visitInsn(ICONST_1);
+            mv.visitInsn(IXOR);
+            return;
+        }
+        if (s.identifier.equals("chr")) {
+            generateExpression(s.paramVals.get(0),mv);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
+            return;
+        }
+        if (s.identifier.equals("floor")) {
+            generateExpression(s.paramVals.get(0),mv);
+            mv.visitInsn(Opcodes.F2I);
+            return;
+        }
+        if (s.identifier.equals("len")) {
+            generateExpression(s.paramVals.get(0),mv);
+            if (s.paramVals.get(0).exprType.type.equals("string"))
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false); // Invoke the length() method
+            else
+                mv.visitInsn(Opcodes.ARRAYLENGTH);
+            return;
+        }
         try {
             Pair<Integer, String> p = sit.get(s.identifier);
             String idtfr = s.identifier;
@@ -457,6 +496,12 @@ public class CodeGenerator<c> implements Opcodes{
         params += typeToAsmType(f.returnType).getDescriptor();
 
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, f.identifier,params,null,null);
+
+        // give the right names to the parameters
+        for (int i = 0; i < f.paramList.size(); i++) {
+            mv.visitParameter(f.paramList.get(i).identifier, i);
+        }
+
         try {
             sit.add(f.identifier, -1, params);
         } catch (SemanticAnalyzerException e) {
@@ -477,6 +522,9 @@ public class CodeGenerator<c> implements Opcodes{
         mv.visitCode();
         for (ASTNodes.Statement s : f.functionCode.statements) {
             generateStatement(s, mv);
+        }
+        if (f.returnType.type.equals("void")){
+            mv.visitInsn(RETURN);
         }
         mv.visitEnd();
         //int nxtId = sit.nxtAvailableIndex();
@@ -664,7 +712,6 @@ public class CodeGenerator<c> implements Opcodes{
         } else if (e instanceof ASTNodes.Comparison){
             generateComparison((ASTNodes.Comparison) e, mv);
         } else if (e instanceof ASTNodes.ArrayCreation){
-            // TODO
             generateArrayCreation((ASTNodes.ArrayCreation) e, mv);
         } else if (e instanceof ASTNodes.ObjectCreation){
             // No need
@@ -849,5 +896,15 @@ public class CodeGenerator<c> implements Opcodes{
     }
 
     public static void main(String[] args) {
+/*
+        int i = 0;
+        new Scanner;
+        int v = System.in.nextInt();
+        new Scanner;
+        String s = System.in.next();
+        new Scanner;
+        Float f = System.in.nextFloat();
+
+ */
     }
 }
