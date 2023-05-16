@@ -1,7 +1,7 @@
 package compiler.CodeGenerator;
 
 import compiler.SemanticAnalyzer.SemanticAnalyzerException;
-import org.checkerframework.checker.units.qual.A;
+//import org.checkerframework.checker.units.qual.A;
 import org.objectweb.asm.*;
 //import org.objectweb.asm.util.*;
 
@@ -85,8 +85,10 @@ public class CodeGenerator implements Opcodes{
 
     }
 
-    public void generateCode(){
-        records.add(new Pair<>("Main", cw));
+    public void generateCode(String compiledFileName){
+        System.out.println("aaaaaaaaaaaaaaaaaaaaaaaa");
+        containerName = compiledFileName;
+        records.add(new Pair<>(containerName, cw));
         cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,containerName,null,"java/lang/Object",null);
 
         // Main method visitor
@@ -111,6 +113,7 @@ public class CodeGenerator implements Opcodes{
         PrintWriter pw = new PrintWriter(System.out);
         //CheckClassAdapter.verify(new ClassReader(cw.toByteArray()), true, pw);
 
+        System.out.println("iiiiiiiiiiiiiiiiiiiiiiiiiii");
         // Write the bytes as a class file
         for(Pair<String, ClassWriter> clazz : records) {
             bytes = clazz.b.toByteArray();
