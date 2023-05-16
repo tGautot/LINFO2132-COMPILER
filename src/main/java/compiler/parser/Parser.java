@@ -60,10 +60,13 @@ public class Parser {
         while(true){
             ASTNodes.Statement s = parseStatement();
             if(s == null){
+                //break;
                 return sl;
             }
             sl.statements.add(s);
         }
+
+
     }
 
     /**
@@ -108,6 +111,7 @@ public class Parser {
                 // FunctionCall
                 return parseFunctionCall();
             }
+
             else{
                 return parseVarAssign();
             }
@@ -625,7 +629,7 @@ public class Parser {
     }
 
     /**
-     * parses var assignment: RefToValue = Expression
+     * parses var assignment: RefToValue = Expression || RefToValue += Expression || RefToValue -= Expression || ... || RefToValue %= Expression
      *
      * The source code might try to have expression as statements. These will usually be caught in the parseStatement,
      * but if it starts with an identifier, then this function will catch it and throw an error saying it couldn't parse
@@ -641,22 +645,49 @@ public class Parser {
 
         node.ref = parseRefToValue();
 
-        if(nxtToken != OperatorToken.ASSIGN){
-            throw new ParserException("Expected '=' for var assignment but got " + nxtToken);
+        if(nxtToken == OperatorToken.ASSIGN){
+            readSymbol();
+            node.value = parseExpression();
+        } else if (nxtToken == OperatorToken.PLUS_ASSIGN) {
+            readSymbol();
+            ASTNodes.AddExpr expr = new ASTNodes.AddExpr();
+            expr.expr1 = node.ref;
+            expr.expr2 = parseExpression();
+            node.value = expr;
+        } else if (nxtToken == OperatorToken.MINUS_ASSIGN) {
+            readSymbol();
+            ASTNodes.SubExpr expr = new ASTNodes.SubExpr();
+            expr.expr1 = node.ref;
+            expr.expr2 = parseExpression();
+            node.value = expr;
+        } else if (nxtToken == OperatorToken.TIMES_ASSIGN) {
+            readSymbol();
+            ASTNodes.MultExpr expr = new ASTNodes.MultExpr();
+            expr.expr1 = node.ref;
+            expr.expr2 = parseExpression();
+            node.value = expr;
+        } else if (nxtToken == OperatorToken.DIVIDE_ASSIGN) {
+            readSymbol();
+            ASTNodes.DivExpr expr = new ASTNodes.DivExpr();
+            expr.expr1 = node.ref;
+            expr.expr2 = parseExpression();
+            node.value = expr;
+        } else if (nxtToken == OperatorToken.MOD_ASSIGN) {
+            readSymbol();
+            ASTNodes.ModExpr expr = new ASTNodes.ModExpr();
+            expr.expr1 = node.ref;
+            expr.expr2 = parseExpression();
+            node.value = expr;
+        }
+        else {
+            throw new ParserException("Expected '=' or '+=' or '-=' or '*=' or '/=' or '%=' for var assignment but got " + nxtToken);
         }
 
-        readSymbol();
-        node.value = parseExpression();
-
-
-        /*if(nxtToken != SymbolToken.SEMICOLON){
-            throw new ParserException("Expected semicolon after var assign but got " + nxtToken);
-        }
-        readSymbol();*/
 
 
         return node;
     }
+
 
     /**
      * Parses ref to value. Might be as simple as a variable name, or could be nested array and object access:

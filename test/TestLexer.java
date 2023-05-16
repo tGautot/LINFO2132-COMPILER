@@ -186,4 +186,141 @@ public class TestLexer {
 
     }
 
+
+    // TESTS FOR ADDITIONAL FEATURES
+    @Test
+    public void plusAssignTest() {
+        String input = "x += 2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                new IdentifierToken("x"),
+                OperatorToken.PLUS_ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "2"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+
+    }
+
+    @Test
+    public void minusAssignTest() {
+        String input = "x -= 2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                new IdentifierToken("x"),
+                OperatorToken.MINUS_ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "2"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+
+    }
+
+    @Test
+    public void timesAssignTest() {
+        String input = "x *= 2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                new IdentifierToken("x"),
+                OperatorToken.TIMES_ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "2"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+    }
+
+    @Test
+    public void divideAssignTest() {
+        String input = "x /= 2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                new IdentifierToken("x"),
+                OperatorToken.DIVIDE_ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "2"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+    }
+
+    @Test
+    public void modAssignTest() {
+        String input = "x %= 2;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                new IdentifierToken("x"),
+                OperatorToken.MOD_ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "2"),
+                SymbolToken.SEMICOLON,
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+
+    }
+
+    @Test
+    public void bigCommentTest() {
+        String input = "var x int = 3;\n" +
+                "/*here a comment on 1 line */\n" +
+                "var d string = \"hello\" /* a comment\n" +
+                "on multiple \n" +
+                "lines*/";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Symbol nxtSymbol = null;
+        Symbol[] expectedSymbols = {
+                KeywordToken.VARIABLE,
+                new IdentifierToken("x"),
+                TypeToken.INT,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.INT, "3"),
+                SymbolToken.SEMICOLON,
+                KeywordToken.VARIABLE,
+                new IdentifierToken("d"),
+                TypeToken.STRING,
+                OperatorToken.ASSIGN,
+                new ValueToken(ValueToken.ValueType.STRING,"hello"),
+                SymbolToken.END_OF_FILE
+        };
+        for (Symbol expectedSymbol : expectedSymbols) {
+            nxtSymbol = lexer.getNextSymbol();
+            assertEquals(nxtSymbol, expectedSymbol);
+        }
+        //assertNotNull(nxtSymbol);
+
+    }
+
 }

@@ -29,10 +29,7 @@ public class Lexer {
 
                 if(Charsets.symbols.contains(nxt.toString())){
                     String nxtString = nxt.toString();
-                    if(nxtString.equals("+")) return OperatorToken.PLUS;
-                    if(nxtString.equals("-")) return OperatorToken.MINUS;
-                    if(nxtString.equals("*")) return OperatorToken.TIMES;
-                    if(nxtString.equals("%")) return OperatorToken.MODULUS;
+
                     if(nxtString.equals(",")) return SymbolToken.COMMA;
                     if(nxtString.equals(";")) return SymbolToken.SEMICOLON;
                     if(nxtString.equals(".")) return SymbolToken.DOT;
@@ -72,11 +69,26 @@ public class Lexer {
                     if(nxt.toString().equals("==")) return OperatorToken.EQUALS;
                     if(nxt.toString().equals("<>")) return OperatorToken.DIFFERENT;
 
+                    if(nxt.toString().equals("+=")) return OperatorToken.PLUS_ASSIGN;
+                    if(nxt.toString().equals("-=")) return OperatorToken.MINUS_ASSIGN;
+                    if(nxt.toString().equals("*=")) return OperatorToken.TIMES_ASSIGN;
+                    if(nxt.toString().equals("/=")) return OperatorToken.DIVIDE_ASSIGN;
+                    if(nxt.toString().equals("%=")) return OperatorToken.MOD_ASSIGN;
+
                     if(nxt.toString().equals("//")){ // Comment, read until newline
                         //String comment = ""; could be useful for a CommentToken
                         char newChar = ' ';
                         while(newChar != '\n'){
                             newChar = (char) this.input.read();
+                        }
+                        continue;
+                    }
+                    if(nxt.toString().equals("/*")){
+                        // diff de */
+                        char[] newChars = {' ',' '};
+                        while (newChars[1] != '/' && newChars[0] != '*') {
+                            newChars[0] = newChars[1];
+                            newChars[1] = (char) this.input.read();
                         }
                         continue;
                     }
@@ -88,6 +100,11 @@ public class Lexer {
                     if(nxt.toString().equals(">")) return OperatorToken.GREATER;
                     if(nxt.toString().equals("<")) return OperatorToken.SMALLER;
                     if(nxt.toString().equals("=")) return OperatorToken.ASSIGN;
+
+                    if(nxt.toString().equals("+")) return OperatorToken.PLUS;
+                    if(nxt.toString().equals("-")) return OperatorToken.MINUS;
+                    if(nxt.toString().equals("*")) return OperatorToken.TIMES;
+                    if(nxt.toString().equals("%")) return OperatorToken.MODULUS;
 
                     // Couldn't resolve to any valid symbols
                     throw new InvalidTokenException("Couldn't resolve symbols with " + nxt);

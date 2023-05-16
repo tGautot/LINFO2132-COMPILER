@@ -12,7 +12,12 @@ public enum OperatorToken implements Symbol{
     GREATER(">"),
     SMALLER("<"),
     GRTR_OR_EQUAL(">="),
-    SMLR_OR_EQUAL("<=");
+    SMLR_OR_EQUAL("<="),
+    PLUS_ASSIGN("+="),
+    MINUS_ASSIGN("-="),
+    TIMES_ASSIGN("*="),
+    DIVIDE_ASSIGN("/="),
+    MOD_ASSIGN("%=");
 
 
     public final String label;

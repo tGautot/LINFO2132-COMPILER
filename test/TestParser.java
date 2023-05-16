@@ -245,6 +245,51 @@ public class TestParser {
 
     }
 
+    @Test
+    public void testPlusAssign(){
+        String input = "zzz.yyy.xxx[3] += 2; aaa += 16;";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        ArrayList<ASTNodes.Statement> expected = new ArrayList<>();
+
+
+        ASTNodes.DirectValue val3 = new ASTNodes.DirectValue("3", new ASTNodes.Type("int", false));
+        ASTNodes.DirectValue val2 = new ASTNodes.DirectValue("2", new ASTNodes.Type("int", false));
+        ASTNodes.DirectValue val16 = new ASTNodes.DirectValue("16", new ASTNodes.Type("int", false));
+
+        ASTNodes.RefToValue ref1 = new ASTNodes.ArrayAccess(
+                new ASTNodes.ObjectAccess(
+                        new ASTNodes.ObjectAccess(
+                                new ASTNodes.Identifier("zzz"),
+                                "yyy"
+                        ),
+                        "xxx"
+                ), val3
+        );
+
+        //expected.add(new ASTNodes.VarAssign(ref1, val2));
+        expected.add(new ASTNodes.VarAssign(ref1, new ASTNodes.AddExpr(ref1,val2)));
+        //expected.add(new ASTNodes.VarAssign( new ASTNodes.Identifier("aaa"), val16));
+        expected.add(new ASTNodes.VarAssign( new ASTNodes.Identifier("aaa"), new ASTNodes.AddExpr(new ASTNodes.Identifier("aaa"),val16)));
+
+        for(int i = 0; i < expected.size(); i++){
+            ASTNodes.Statement expct = expected.get(i);
+            ASTNodes.Statement got = sl.statements.get(i);
+            boolean b = expct.equals(got);
+            assertTrue(b);
+            //assertEquals(expct, got);
+        }
+
+    }
+
 
     @Test
     public void testExpressions(){

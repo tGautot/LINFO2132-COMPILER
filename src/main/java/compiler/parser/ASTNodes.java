@@ -280,6 +280,7 @@ public class ASTNodes {
         }
     }
 
+
     static public class VarAssign extends Statement{
         public RefToValue ref;
         public Expression value;
@@ -305,7 +306,7 @@ public class ASTNodes {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             VarAssign that = (VarAssign) o;
-            return Objects.equals(ref, that.ref);
+            return Objects.equals(ref, that.ref) && Objects.equals(value,that.value);
         }
 
         @Override
