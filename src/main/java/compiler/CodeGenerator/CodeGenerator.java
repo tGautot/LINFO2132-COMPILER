@@ -47,7 +47,7 @@ public class CodeGenerator implements Opcodes{
 
 
     public CodeGenerator(ASTNodes.StatementList statementList) {
-        System.out.println("LETSGO");
+        //System.out.println("LETSGO");
         this.statementList = statementList;
         this.cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         this.typeClass = new HashMap<>();
@@ -86,7 +86,6 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateCode(String compiledFileName){
-        System.out.println("aaaaaaaaaaaaaaaaaaaaaaaa");
         containerName = compiledFileName;
         records.add(new Pair<>(containerName, cw));
         cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,containerName,null,"java/lang/Object",null);
@@ -113,7 +112,6 @@ public class CodeGenerator implements Opcodes{
         PrintWriter pw = new PrintWriter(System.out);
         //CheckClassAdapter.verify(new ClassReader(cw.toByteArray()), true, pw);
 
-        System.out.println("iiiiiiiiiiiiiiiiiiiiiiiiiii");
         // Write the bytes as a class file
         for(Pair<String, ClassWriter> clazz : records) {
             bytes = clazz.b.toByteArray();
@@ -142,7 +140,7 @@ public class CodeGenerator implements Opcodes{
         }
     }
     public Object evaluateConstExpr(ASTNodes.Expression initExpr) {
-        System.out.println("Evaluating " + initExpr);
+        //System.out.println("Evaluating " + initExpr);
         if(initExpr instanceof ASTNodes.DirectValue){
             return directValToVal((ASTNodes.DirectValue) initExpr);
         }
@@ -285,7 +283,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     private void generateRefToValue(ASTNodes.RefToValue rtv, MethodVisitor mv, boolean toStore, boolean topLvl){
-        System.out.println("Generating RefToValue " + rtv);
+        //System.out.println("Generating RefToValue " + rtv);
         if(rtv instanceof ASTNodes.Identifier){
             generateIdentifier((ASTNodes.Identifier) rtv, mv, toStore && topLvl);
         } else if(rtv instanceof ASTNodes.ArrayAccess){
@@ -307,7 +305,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     private void generateVarAssign(ASTNodes.VarAssign va, MethodVisitor mv){
-        System.out.println("Generating Var assign");
+        //System.out.println("Generating Var assign");
         if(va.ref instanceof ASTNodes.ObjectAccess){
             generateRefToValue(va.ref, mv, true, true);
             ASTNodes.ObjectAccess oa = (ASTNodes.ObjectAccess) va.ref;
@@ -331,7 +329,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     private void generateFuncCall(ASTNodes.FunctionCall s, MethodVisitor mv) {
-        System.out.println("Generating FuncCall");
+        //System.out.println("Generating FuncCall");
 
         if(s.identifier.startsWith("write")){
             String funcName = "";
@@ -410,7 +408,7 @@ public class CodeGenerator implements Opcodes{
             }
             Type idtType = Type.getType(p.b);
 
-            System.out.println("Calling function with type " + idtType.getDescriptor());
+            //System.out.println("Calling function with type " + idtType.getDescriptor());
             if(p.a == -2){
                 mv.visitMethodInsn(INVOKESPECIAL, idtfr, "<init>", p.b, false);
                 return;
@@ -424,14 +422,14 @@ public class CodeGenerator implements Opcodes{
     }
 
     private void generateReturn(ASTNodes.ReturnExpr s, MethodVisitor mv)  {
-        System.out.println("Generating return");
+        //System.out.println("Generating return");
         generateExpression(s.expr, mv);
         ASTNodes.Type returnType = s.expr.exprType;
         mv.visitInsn(typeToAsmType(returnType).getOpcode(IRETURN));
     }
 
     public void generateRecord(ASTNodes.Record record) {
-        System.out.println("Generating Record");
+        //System.out.println("Generating Record");
 
         ClassWriter new_cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String bn = containerName + "$" + record.identifier;
@@ -454,7 +452,7 @@ public class CodeGenerator implements Opcodes{
         } catch (SemanticAnalyzerException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("Constructor description: " + constructorDesc);
+        //System.out.println("Constructor description: " + constructorDesc);
         MethodVisitor init = new_cw.visitMethod(ACC_PUBLIC, "<init>", constructorDesc, null, null);
         init.visitCode();
         init.visitVarInsn(ALOAD, 0); // this
@@ -484,7 +482,7 @@ public class CodeGenerator implements Opcodes{
 
 
     public void generateFunctionDef(ASTNodes.FunctionDef f) {
-        System.out.println("Generating FunctionDef");
+        //System.out.println("Generating FunctionDef");
         String params = "(";
         for (ASTNodes.Param p : f.paramList) {
             params += typeToAsmType(p.type).getDescriptor();
@@ -532,7 +530,7 @@ public class CodeGenerator implements Opcodes{
 
 
     public  void generateVar(ASTNodes.VarCreation creation, MethodVisitor mv){
-        System.out.println("Generating Var creation");
+        //System.out.println("Generating Var creation");
         Type varType = typeToAsmType(creation.type);
         String desc = varType.getDescriptor();
 
@@ -565,7 +563,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateVal(ASTNodes.ValCreation creation, MethodVisitor mv){
-        System.out.println("Generating val creation");
+        //System.out.println("Generating val creation");
         // No difference between val and var after semantic analysis, just re-use code
         ASTNodes.VarCreation equiv = new ASTNodes.VarCreation();
         equiv.varExpr = creation.valExpr;
@@ -575,7 +573,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateConst(ASTNodes.ConstCreation creation) {
-        System.out.println("Generating const");
+        //System.out.println("Generating const");
 
         Object val = evaluateConstExpr(creation.initExpr);
         constValues.put(creation.identifier, val );
@@ -587,7 +585,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateIfStmt(ASTNodes.IfCond stt, MethodVisitor mv){
-        System.out.println("Generating IfStmt");
+        //System.out.println("Generating IfStmt");
         Label elseLabel = new Label();
         Label endLabel = new Label();
         boolean hasElse = stt.elseCodeBlock != null;
@@ -607,7 +605,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateWhileLoop(ASTNodes.WhileLoop stt, MethodVisitor mv){
-        System.out.println("Generating while loop");
+        //System.out.println("Generating while loop");
         Label startLabel = new Label();
         Label endLabel = new Label();
 
@@ -624,7 +622,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateForLoop(ASTNodes.ForLoop stt, MethodVisitor mv)   {
-        System.out.println("Generating for loop");
+        //System.out.println("Generating for loop");
         Label startLabel = new Label();
         Label endLabel = new Label();
 
@@ -678,7 +676,7 @@ public class CodeGenerator implements Opcodes{
 
     public void generateExpression(ASTNodes.Expression e, MethodVisitor mv)  {
 
-        System.out.println("Generating Expression " + e);
+        //System.out.println("Generating Expression " + e);
         if (e == null) return;
         if (e instanceof ASTNodes.DirectValue) {
             ASTNodes.DirectValue val = (ASTNodes.DirectValue) e;
@@ -721,7 +719,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     private void generateArrayCreation(ASTNodes.ArrayCreation e, MethodVisitor mv) {
-        System.out.println("Generating array creation");
+        //System.out.println("Generating array creation");
         generateExpression(e.arraySize, mv);
         if(e.type.type.equals("int")){
             mv.visitIntInsn(NEWARRAY, T_INT);
@@ -740,10 +738,10 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateIdentifier(ASTNodes.Identifier idt, MethodVisitor mv, boolean toStore){
-        System.out.println("Generating Identifier (toStore: " + toStore + ")");
+        //System.out.println("Generating Identifier (toStore: " + toStore + ")");
         try {
             if(!sit.contain(idt.id)){
-                System.out.println("Identifier " + idt.id + " not in SymbolIndexTable");
+                //System.out.println("Identifier " + idt.id + " not in SymbolIndexTable");
                 if(constValues.containsKey(idt.id)){
                     assert(!toStore);
                     mv.visitLdcInsn(constValues.get(idt.id));
@@ -816,7 +814,7 @@ public class CodeGenerator implements Opcodes{
     }
 
     public void generateComparison(ASTNodes.Comparison comp, MethodVisitor mv){
-        System.out.println("Generating comparison");
+        //System.out.println("Generating comparison");
         generateExpression(comp.expr1, mv);
         generateExpression(comp.expr2, mv);
 
@@ -873,6 +871,9 @@ public class CodeGenerator implements Opcodes{
 
     public static void main(String[] args) {
 
+        int[] tab1 = {1,2,3};
+        int[] tab2 = {1,2,3};
+        System.out.println(tab1.equals(tab2));
 
     }
 }

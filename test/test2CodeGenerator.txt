@@ -1,0 +1,64 @@
+
+record Identity {
+    name string;
+    id int;
+}
+
+record Point {
+    x int;
+    y int;
+    z int;
+    idt Identity;
+}
+
+record History {
+    locs Point[];
+    idt Identity;
+}
+
+proc printHello() void {
+    writeln("Hello");
+}
+
+proc squarePoint(p Point) Point {
+    var newP Point = Point(
+        p.x*p.x,
+        p.y*p.y,
+        p.z*p.z,
+        Identity("Squared", p.idt.id + 1)
+    );
+    return newP;
+}
+
+var p Point = Point(5,6,7, Identity("Test", 0));
+var p2 Point = squarePoint(p);
+var ps Point[] = Point[](2);
+
+ps[0] = p;
+ps[1] = p2;
+
+var hist History = History(ps, Identity("Hist", 0))
+
+var newPs Point[] = Point[](3);
+newPs[0] = ps[0];
+newPs[1] = ps[1];
+var newPointIdt Identity = Identity("NegPoint", -1);
+newPs[2] = Point(-1,-1,-1, newPointIdt);
+var newHistIdt Identity = Identity("Hist", hist.idt.id+1);
+hist = History(newPs, newHistIdt);
+
+writeln(p.idt.name) // "Test"
+writeln(p2.idt.name) // "Squared"
+writeln(newPs[2].idt.name) // "NegPoint"
+writeln(chr(65)) // "A"
+
+if ps[1].idt.name == "blabla" {
+
+}
+else {
+    ps[1].idt.name = "else"
+}
+writeln(ps[1].idt.name) // "else"
+writeln(p2.idt.name) // "else"
+
+

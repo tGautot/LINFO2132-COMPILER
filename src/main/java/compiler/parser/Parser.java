@@ -54,13 +54,14 @@ public class Parser {
      * @throws ParserException from parseStatement
      */
     public ASTNodes.StatementList parseCode() throws ParserException {
-        logger.log("Parsing code block " + nxtToken, null);
+        //logger.log("Parsing code block " + nxtToken, null);
         ASTNodes.StatementList sl = new ASTNodes.StatementList();
         sl.statements = new ArrayList<>();
         while(true){
             ASTNodes.Statement s = parseStatement();
             if(s == null){
                 //break;
+                //System.out.println("PARSER FINISHED");
                 return sl;
             }
             sl.statements.add(s);
@@ -91,7 +92,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.Statement parseStatement() throws ParserException {
-        logger.log("Parsing statement " + nxtToken, null);
+        //logger.log("Parsing statement " + nxtToken, null);
 
         while (nxtToken == SymbolToken.SEMICOLON){
             readSymbol();
@@ -155,7 +156,7 @@ public class Parser {
      * @throws ParserException in case cannot parse RefToValue
      */
     public ASTNodes.DeleteStt parseDelete() throws ParserException {
-        logger.log("Parsing delete " + nxtToken, null);
+        //logger.log("Parsing delete " + nxtToken, null);
 
 
         readSymbol();
@@ -171,7 +172,7 @@ public class Parser {
      * @throws ParserException by itself or from parseExpression
      */
     public ASTNodes.ConstCreation parseConstCreation() throws ParserException {
-        logger.log("Parsing const creation " + nxtToken, null);
+        //logger.log("Parsing const creation " + nxtToken, null);
 
         ASTNodes.ConstCreation node = new ASTNodes.ConstCreation();
         node.initExpr = null;
@@ -201,7 +202,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.ValCreation parseValCreation() throws ParserException {
-        logger.log("Parsing val creation " + nxtToken, null);
+        //logger.log("Parsing val creation " + nxtToken, null);
 
         // ValCreation and VarCreation have the exact same parsing mechanism, so just re-use it
         ASTNodes.ValCreation node = new ASTNodes.ValCreation();
@@ -220,7 +221,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.VarCreation parseVarCreation() throws ParserException {
-        logger.log("Parsing var creation " + nxtToken, null);
+        //logger.log("Parsing var creation " + nxtToken, null);
 
         // When in here, var token is already in nxtToken
         ASTNodes.VarCreation varCreationNode = new ASTNodes.VarCreation();
@@ -256,7 +257,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.Type parseType() throws ParserException {
-        logger.log("Parsing type " + nxtToken, null);
+        //logger.log("Parsing type " + nxtToken, null);
 
         if(!(nxtToken instanceof TypeToken || nxtToken instanceof IdentifierToken)){
             throw new ParserException("Expected type, but got " + nxtToken.toString());
@@ -295,7 +296,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.FunctionCall parseFunctionCall() throws ParserException {
-        logger.log("Parsing function call " + nxtToken, null);
+        //logger.log("Parsing function call " + nxtToken, null);
 
         // Should currently have function identifier in nxtToken
         ASTNodes.FunctionCall node = new ASTNodes.FunctionCall();
@@ -314,7 +315,7 @@ public class Parser {
      * @throws ParserException
      */
     public ArrayList<ASTNodes.Expression> parseParamVals() throws ParserException {
-        logger.log("Parsing param vals " + nxtToken, null);
+        //logger.log("Parsing param vals " + nxtToken, null);
 
         ArrayList<ASTNodes.Expression> vals = new ArrayList<>();
         if(nxtToken == SymbolToken.CLOSE_PARENTHESIS){
@@ -344,7 +345,7 @@ public class Parser {
      * @throws ParserException in case of missing symbol or wrong token type
      */
     public ASTNodes.FunctionDef parseFunctionDef() throws ParserException {
-        logger.log("Parsing function def " + nxtToken, null);
+        //logger.log("Parsing function def " + nxtToken, null);
 
         // Keyword proc in nxtToken
         ASTNodes.FunctionDef node = new ASTNodes.FunctionDef();
@@ -384,7 +385,7 @@ public class Parser {
      * @throws ParserException
      */
     public ArrayList<ASTNodes.Param> parseParamList() throws ParserException {
-        logger.log("Parsing param list " + nxtToken, null);
+        //logger.log("Parsing param list " + nxtToken, null);
 
 
         ArrayList<ASTNodes.Param> params = new ArrayList<>();
@@ -421,7 +422,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.WhileLoop parseWhileLoop() throws ParserException {
-        logger.log("Parsing while loop " + nxtToken, null);
+        //logger.log("Parsing while loop " + nxtToken, null);
 
         // while token in nxtToken
         ASTNodes.WhileLoop node = new ASTNodes.WhileLoop();
@@ -447,7 +448,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.ForLoop parseForLoop() throws ParserException {
-        logger.log("Parsing for loop " + nxtToken, null);
+        //logger.log("Parsing for loop " + nxtToken, null);
 
         // nxt symbol should be `for`
         ASTNodes.ForLoop node = new ASTNodes.ForLoop();
@@ -491,7 +492,7 @@ public class Parser {
      * @throws ParserException if no record name, or missing symbol
      */
     public ASTNodes.Record parseRecord() throws ParserException {
-        logger.log("Parsing record " + nxtToken, null);
+        //logger.log("Parsing record " + nxtToken, null);
 
         ASTNodes.Record node = new ASTNodes.Record();
 
@@ -530,7 +531,7 @@ public class Parser {
      * @throws ParserException from parsing type
      */
     public ArrayList<ASTNodes.RecordVar> parseRecordVars() throws ParserException {
-        logger.log("Parsing record vars " + nxtToken, null);
+        //logger.log("Parsing record vars " + nxtToken, null);
 
         ArrayList<ASTNodes.RecordVar> vars = new ArrayList<>();
         while(true){
@@ -560,7 +561,7 @@ public class Parser {
      * @throws ParserException from parsing expression
      */
     public ASTNodes.ReturnExpr parseReturn() throws ParserException {
-        logger.log("Parsing return " + nxtToken, null);
+        //logger.log("Parsing return " + nxtToken, null);
 
         readSymbol();
         ASTNodes.ReturnExpr node = new ASTNodes.ReturnExpr();
@@ -587,7 +588,7 @@ public class Parser {
      * @throws ParserException in case of missing/wrong symbol of while parsing expression/codeblock
      */
     public ASTNodes.IfCond parseIfCond() throws ParserException {
-        logger.log("Parsing if cond " + nxtToken, null);
+        //logger.log("Parsing if cond " + nxtToken, null);
 
         // If in nxtToken
         readSymbol();
@@ -639,7 +640,7 @@ public class Parser {
      * @throws ParserException if there are no equal sign of if problem when parsing expression
      */
     public ASTNodes.VarAssign parseVarAssign() throws ParserException {
-        logger.log("Parsing var assign " + nxtToken, null);
+        //logger.log("Parsing var assign " + nxtToken, null);
 
         ASTNodes.VarAssign node = new ASTNodes.VarAssign();
 
@@ -706,7 +707,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.RefToValue parseRefToValue() throws ParserException {
-        logger.log("Parsing ref to value " + nxtToken, null);
+        //logger.log("Parsing ref to value " + nxtToken, null);
 
         ArrayList<ASTNodes.RefToValue> q = new ArrayList<>();
 
@@ -750,7 +751,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.Expression parseArrayCreation() throws ParserException {
-        logger.log("Parsing array creation " + nxtToken, null);
+        //logger.log("Parsing array creation " + nxtToken, null);
 
         // Should have TypeToken in nxtToken
         ASTNodes.ArrayCreation node = new ASTNodes.ArrayCreation();
@@ -820,7 +821,7 @@ public class Parser {
      * @throws ParserException from parseComp
      */
     public ASTNodes.Expression parseExpression() throws ParserException {
-        logger.log("Parsing expression " + nxtToken, null);
+        //logger.log("Parsing expression " + nxtToken, null);
 
         ASTNodes.Expression curr = parseComp();
 
@@ -851,7 +852,7 @@ public class Parser {
      * @throws ParserException from parseAddSub
      */
     public ASTNodes.Expression parseComp() throws ParserException{
-        logger.log("Parsing comparison " + nxtToken, null);
+        //logger.log("Parsing comparison " + nxtToken, null);
 
         ASTNodes.Expression curr = parseAddSub();
 
@@ -902,7 +903,7 @@ public class Parser {
      * @throws ParserException from parseMultMod
      */
     public ASTNodes.Expression parseAddSub() throws ParserException {
-        logger.log("Parsing add sub " + nxtToken, null);
+        //logger.log("Parsing add sub " + nxtToken, null);
 
         ASTNodes.Expression curr = parseMultMod();
 
@@ -933,7 +934,7 @@ public class Parser {
      * @throws ParserException from parseTerm
      */
     public ASTNodes.Expression parseMultMod() throws ParserException {
-        logger.log("Parsing mult mod " + nxtToken, null);
+        //logger.log("Parsing mult mod " + nxtToken, null);
 
         // Parsing function for  highest precedence math operators : * / %
         ASTNodes.Expression curr = parseTerm();
@@ -978,7 +979,7 @@ public class Parser {
      * @throws ParserException if couldn't match to any of the above nodes
      */
     public ASTNodes.Expression parseTerm() throws ParserException {
-        logger.log("Parsing term " + nxtToken, null);
+        //logger.log("Parsing term " + nxtToken, null);
 
         if(nxtToken instanceof IdentifierToken){
             if(lookAhead == SymbolToken.DOT || (lookAhead == SymbolToken.OPEN_BRACKET && lookAhead2 != SymbolToken.CLOSE_BRACKET)){

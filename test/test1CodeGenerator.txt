@@ -1,0 +1,79 @@
+proc square (v int) int {
+    return v*v
+}
+
+record Identity {
+    name string;
+    id int;
+}
+
+record Point {
+    x int;
+    y int;
+    z int;
+    idt Identity;
+}
+
+record History {
+    locs Point[];
+    idt Identity;
+}
+
+proc printHello() void {
+    writeln("Hello");
+}
+
+proc squarePoint(p Point) Point {
+    var newP Point = Point(
+        p.x*p.x,
+        p.y*p.y,
+        p.z*p.z,
+        Identity("Squared", p.idt.id + 1)
+    );
+    return newP;
+}
+
+var p Point = Point(5,6,7, Identity("Test", 0));
+var p2 Point = squarePoint(p);
+var ps Point[] = Point[](2);
+
+ps[0] = p;
+ps[1] = p2;
+
+var hist History = History(ps, Identity("Hist", 0))
+
+var newPs Point[] = Point[](3);
+newPs[0] = ps[0];
+newPs[1] = ps[1];
+var newPointIdt Identity = Identity("NegPoint", -1);
+newPs[2] = Point(-1,-1,-1, newPointIdt);
+var newHistIdt Identity = Identity("Hist", hist.idt.id+1);
+hist = History(newPs, newHistIdt);
+
+
+
+writeInt(hist.locs[0].x); // 5
+writeInt(ps[0].x) // 5
+writeInt(ps[1].y) // 36
+writeInt(newPs[2].z) // -1
+writeInt(ps[1].idt.id) // 1
+
+var i int = 0
+
+for i=square(1) to square(10) by square(1) {
+    hist.locs[0].x += 1
+}
+
+writeInt(hist.locs[0].x); // 104
+
+if newPs[2].x==-1 and newPs[2].y==-1 and newPs[2].z==-1 {
+    newPs[2].idt.id *= 10 
+}
+
+writeInt(newPs[2].idt.id) // -10
+newPointIdt.id = len(newPointIdt.name) 
+writeInt(newPointIdt.id) //8
+
+
+
+
