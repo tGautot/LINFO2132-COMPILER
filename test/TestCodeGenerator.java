@@ -21,6 +21,28 @@ import static org.junit.Assert.*;
 public class TestCodeGenerator {
 
     @Test
+    public void baseTest() throws IOException, SemanticAnalyzerException, ClassNotFoundException {
+        Path filePath = Path.of("./test/simple_code_copie.txt");
+
+        String input = Files.readString(filePath);
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
+        CodeGenerator generator = new CodeGenerator(sl);
+        generator.generateCode("Main");
+
+        assertTrue(true);
+    }
+
+    @Test
     public void testInt() throws IOException, SemanticAnalyzerException, ClassNotFoundException {
         Path filePath = Path.of("./test/test1CodeGenerator.txt");
 

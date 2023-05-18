@@ -232,9 +232,15 @@ public class SemanticAnalyzer {
                     throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
                 }
             } else {
-                if (!tParam.get(i).type.equals(type)) {
+                if (!tParam.get(i).type.equals(type) &&
+                        !(tParam.get(i).type.type.equals("real") && type.type.equals("int") && !tParam.get(i).type.isArray && !type.isArray)) {
                     throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
+
                 }
+                //if (!tParam.get(i).type.equals(type)) {
+                //else {
+                  //  throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
+                //}
             }
         }
 
@@ -295,7 +301,7 @@ public class SemanticAnalyzer {
 
         if (assign.ref instanceof ASTNodes.Identifier) {
             ASTNodes.Identifier id = (ASTNodes.Identifier)assign.ref;
-            if (table.containConstVal(id.id)) { // TODO
+            if (table.containConstVal(id.id)) {
                 if (table.getConstVal(id.id).equals("const")) {
                     throw new SemanticAnalyzerException("const cannot be modified");
                 } else if (table.getConstVal(id.id).equals("val")) {
@@ -310,6 +316,10 @@ public class SemanticAnalyzer {
 
         ASTNodes.Type type = analyzeRefToValue(assign.ref,table);
 
+        if (type.type.equals("real") && exprType.type.equals("int") && !type.isArray && !exprType.isArray) {
+            return;
+        }
+
         if (!type.equals(exprType)) {
             throw new SemanticAnalyzerException("tried to assign " + exprType + " to a " + type + " variable");
         }
@@ -323,6 +333,10 @@ public class SemanticAnalyzer {
         if (creation.valExpr != null) {
             table.addVal(creation.identifier);
             ASTNodes.Type assignedType = analyzeExpression(creation.valExpr,table);
+            if (creation.type.type.equals("real") && assignedType.type.equals("int") && !creation.type.isArray && !assignedType.isArray) {
+                // allow a val double (array or not) to be assigned to int
+                return;
+            }
             if (!creation.type.equals(assignedType)) {
                 throw new SemanticAnalyzerException("tried to assign " + assignedType + " to " + creation.type + " value " + creation.identifier);
             }
@@ -331,12 +345,17 @@ public class SemanticAnalyzer {
         }
     }
 
+
     public void analyzeVarCreation(ASTNodes.VarCreation creation,SymbolTable table) throws SemanticAnalyzerException {
         if (creation.type.type.equals("void")) {
             throw new SemanticAnalyzerException("Var type cannot be void");
         }
         if (creation.varExpr != null) {
             ASTNodes.Type type = analyzeExpression(creation.varExpr,table);
+            if (creation.type.type.equals("real") && type.type.equals("int") && !creation.type.isArray && !type.isArray) {
+                // allow a var double (array or not) to be assigned to int
+                return;
+            }
             if (!creation.type.equals(type)) {
                 throw new SemanticAnalyzerException("tried to assign " + type + " to " + creation.type + " variable " + creation.identifier);
 
@@ -359,6 +378,10 @@ public class SemanticAnalyzer {
         if (creation.initExpr != null) {
             table.addConst(creation.identifier);
             ASTNodes.Type type = analyzeExpression(creation.initExpr,table);
+            if (creation.type.type.equals("real") && type.type.equals("int") && !creation.type.isArray && !type.isArray) {
+                // allow a const double (array or not) to be assigned to int
+                return;
+            }
             if (!creation.type.equals(type)) {
                 throw new SemanticAnalyzerException("tried to assign " + type + " to " + creation.type + " const " + creation.identifier);
             }
@@ -372,6 +395,13 @@ public class SemanticAnalyzer {
             /*if (( (ASTNodes.ReturnExpr) block.statements.get(block.statements.size()-1)).expr != null ) {
                 throw new SemanticAnalyzerException("void function " + functionDef.identifier +  "cannot return anything");
             }*/
+
+            if (block.statements.get(block.statements.size()-1) instanceof ASTNodes.ReturnExpr) {
+                ASTNodes.ReturnExpr ret = (ASTNodes.ReturnExpr) block.statements.get(block.statements.size()-1);
+                if (!(ret.expr instanceof ASTNodes.NullExpr)) {
+                    throw new SemanticAnalyzerException("void function " + functionDef.identifier +  "cannot return anything");
+                }
+            }
             for (ASTNodes.Param p: functionDef.paramList) {
                 table.add(p.identifier,p.type);
             }
@@ -387,13 +417,27 @@ public class SemanticAnalyzer {
             analyze(block,table,false);
             ASTNodes.ReturnExpr last = (ASTNodes.ReturnExpr)block.statements.get(block.statements.size()-1);
             ASTNodes.Type actualReturnType = analyzeExpression(last.expr,table);
-            if (!type.equals(actualReturnType)) {
+            if (!type.equals(actualReturnType) &&
+                    !(functionDef.returnType.type.equals("real") && actualReturnType.type.equals("int") && !functionDef.returnType.isArray && !actualReturnType.isArray) ) {
                 throw new SemanticAnalyzerException("function " + functionDef.identifier +  " returns wrong type : " + actualReturnType + " instead of " + type);
+
             }
+            //if (!type.equals(actualReturnType)) {
+            //else {
+              //  throw new SemanticAnalyzerException("function " + functionDef.identifier +  " returns wrong type : " + actualReturnType + " instead of " + type);
+            //}
             return type;
         }
     }
 
+    public boolean realAndInt(ASTNodes.Type t1, ASTNodes.Type t2) {
+        if (t1.isArray || t2.isArray) return false;
+        if ((t1.type.equals("int") && t2.type.equals("real")) ||
+                t1.type.equals("real") && t2.type.equals("int")) {
+            return true;
+        }
+        return false;
+    }
 
     public ASTNodes.Type analyzeMathExpr(ASTNodes.MathExpr expr, SymbolTable table) throws SemanticAnalyzerException {
         if (expr instanceof ASTNodes.NegateExpr) {
@@ -407,10 +451,13 @@ public class SemanticAnalyzer {
             ASTNodes.AddExpr e = (ASTNodes.AddExpr) expr;
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("real",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types in addition should be the same : " + type1 + " and " + type2);
             }
-            if ((type1.type != "int" && type1.type != "real") || type1.isArray) {
+            if ((type1.type != "int" && type1.type != "real")) {
                 throw new SemanticAnalyzerException("add operation not supported on : " + type1);
             }
             return type1;
@@ -418,6 +465,9 @@ public class SemanticAnalyzer {
             ASTNodes.SubExpr e = (ASTNodes.SubExpr) expr;
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("real",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types in subtraction should be the same : " + type1 + " and " + type2);
             }
@@ -429,6 +479,9 @@ public class SemanticAnalyzer {
             ASTNodes.DivExpr e = (ASTNodes.DivExpr) expr;
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("real",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types in division should be the same : " + type1 + " and " + type2);
             }
@@ -441,6 +494,9 @@ public class SemanticAnalyzer {
             ASTNodes.MultExpr e = (ASTNodes.MultExpr) expr;
             ASTNodes.Type type1 = analyzeExpression(e.expr1,table);
             ASTNodes.Type type2 = analyzeExpression(e.expr2,table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("real",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types in multiplication should be the same : " + type1 + " and " + type2);
             }
@@ -471,6 +527,9 @@ public class SemanticAnalyzer {
             ASTNodes.EqComp c = (ASTNodes.EqComp) cmp;
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("bool",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types should be the same in equality cmp : " + type1 + " and " + type2);
             }
@@ -482,6 +541,9 @@ public class SemanticAnalyzer {
             ASTNodes.NotEqComp c = (ASTNodes.NotEqComp) cmp;
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("bool",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types should be the same in inequality cmp : " + type1 + " and " + type2);
             }
@@ -493,6 +555,9 @@ public class SemanticAnalyzer {
             ASTNodes.GrEqComp c = (ASTNodes.GrEqComp) cmp;
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("bool",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types should be the same in greater or eq cmp : " + type1 + " and " + type2);
             }
@@ -504,6 +569,9 @@ public class SemanticAnalyzer {
             ASTNodes.SmEqComp c = (ASTNodes.SmEqComp) cmp;
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("bool",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types should be the same in smaller or eq cmp : " + type1 + " and " + type2);
             }
@@ -515,6 +583,9 @@ public class SemanticAnalyzer {
             ASTNodes.GrComp c = (ASTNodes.GrComp) cmp;
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("bool",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types should be the same in strict greater cmp : " + type1 + " and " + type2);
             }
@@ -527,6 +598,9 @@ public class SemanticAnalyzer {
             ASTNodes.SmComp c = (ASTNodes.SmComp) cmp;
             ASTNodes.Type type1 = analyzeExpression(c.expr1, table);
             ASTNodes.Type type2 = analyzeExpression(c.expr2, table);
+            if (realAndInt(type1,type2)) {
+                return new ASTNodes.Type("bool",false);
+            }
             if (!type1.equals(type2)) {
                 throw new SemanticAnalyzerException("types should be the same in strict smaller cmp : " + type1 + " and " + type2);
             }
