@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -26,7 +27,7 @@ import java.nio.file.Path;
 
 public class Compiler {
     public static void main(String[] args) throws IOException, SemanticAnalyzerException {
-        //Path filePath = Path.of("./test/simple_code_copie.txt");
+
         Path filePath = Path.of(args[0]);
 
         String input = Files.readString(filePath);
@@ -40,29 +41,12 @@ public class Compiler {
             throw new RuntimeException(e);
         }
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        System.out.println("111111111111111");
+
         analyzer.analyze(sl,analyzer.symbolTable,true);
-        System.out.println("22222222222222222222");
+
         CodeGenerator generator = new CodeGenerator(sl);
-        System.out.println("bbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+
         generator.generateCode(args[1]);
-
-        /*
-        System.out.println("------------------------------------------");
-
-        String[] cmd = new String[] {"java", "Main"};
-        Process proc = new ProcessBuilder(cmd).start();
-
-        BufferedReader bf =
-                new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-        String line = "";
-        while((line = bf.readLine()) != null) {
-            System.out.print(line + "\n");
-        }
-
-        System.out.println("------------------------------------------");
-        */
 
 
     }

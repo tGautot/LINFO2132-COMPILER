@@ -291,8 +291,24 @@ public class CodeGenerator implements Opcodes{
             generateRefToValue(aa.ref, mv, toStore, false);
             generateExpression(aa.arrayIndex, mv);
             Type owner = typeToAsmType(aa.ref.exprType);
-            if(!(topLvl && toStore))
-                mv.visitInsn(owner.getOpcode(IALOAD));
+            if(!(topLvl && toStore)) {
+                // Following doesnt work, always return AALOAD
+                // mv.visitInsn(owner.getOpcode(IALOAD));
+                switch(aa.ref.exprType.type){
+                    case "int":
+                        mv.visitInsn(IALOAD);
+                        break;
+                    case "real":
+                        mv.visitInsn(FALOAD);
+                        break;
+                    case "bool":
+                        mv.visitInsn(BALOAD);
+                        break;
+                    default:
+                        mv.visitInsn(AALOAD);
+                        break;
+                }
+            }
         } else if(rtv instanceof ASTNodes.ObjectAccess){
             ASTNodes.ObjectAccess oa = (ASTNodes.ObjectAccess) rtv;
             generateRefToValue(oa.object, mv, toStore, false);
@@ -319,7 +335,22 @@ public class CodeGenerator implements Opcodes{
             ASTNodes.ArrayAccess aa = (ASTNodes.ArrayAccess) va.ref;
             generateExpression(va.value, mv); // Val after index
             Type owner = typeToAsmType(aa.ref.exprType);
-            mv.visitInsn(owner.getOpcode(IASTORE));
+            // Following line doesnt work, always return AASTORE, dunno why
+            // mv.visitInsn(owner.getOpcode(IASTORE));
+            switch(aa.ref.exprType.type){
+                case "int":
+                    mv.visitInsn(IASTORE);
+                    break;
+                case "real":
+                    mv.visitInsn(FASTORE);
+                    break;
+                case "bool":
+                    mv.visitInsn(BASTORE);
+                    break;
+                default:
+                    mv.visitInsn(AASTORE);
+                    break;
+            }
         }
         else {
             ASTNodes.Identifier idt = (ASTNodes.Identifier) va.ref;
