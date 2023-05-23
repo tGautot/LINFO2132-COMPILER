@@ -48,6 +48,7 @@ public class TestCodeGenerator {
         expected.add(104);
         expected.add(-10);
         expected.add(8);
+        expected.add(3);
 
         String[] cmd = new String[] {"java", "Main"};
         Process proc = new ProcessBuilder(cmd).start();
@@ -92,6 +93,8 @@ public class TestCodeGenerator {
         expected.add("A");
         expected.add("else");
         expected.add("else");
+        expected.add("L");
+        expected.add("Hist");
 
         String[] cmd = new String[] {"java", "Main"};
         Process proc = new ProcessBuilder(cmd).start();

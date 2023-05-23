@@ -88,10 +88,10 @@ public class CodeGenerator implements Opcodes{
     public void generateCode(String compiledFileName){
         containerName = compiledFileName;
         records.add(new Pair<>(containerName, cw));
-        cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC,containerName,null,"java/lang/Object",null);
+        cw.visit(V1_8,ACC_PUBLIC,containerName,null,"java/lang/Object",null);
 
         // Main method visitor
-        mmv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
+        mmv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC,"main","([Ljava/lang/String;)V",null,null);
         Label beginLbl = new Label(); Label endLbl = new Label();
         currentScope = new Pair(beginLbl, endLbl);
         mmv.visitCode();
@@ -389,12 +389,12 @@ public class CodeGenerator implements Opcodes{
             if(s.identifier.endsWith("String")){ funcName = "next"; funcDesc = "()Ljava/lang/String;"; }
 
 
-            mv.visitTypeInsn(Opcodes.NEW, "java/util/Scanner");
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+            mv.visitTypeInsn(NEW, "java/util/Scanner");
+            mv.visitInsn(DUP);
+            mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+            mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
 
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", funcName, funcDesc, false);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", funcName, funcDesc, false);
 
 
 
@@ -408,20 +408,20 @@ public class CodeGenerator implements Opcodes{
         }
         if (s.identifier.equals("chr")) {
             generateExpression(s.paramVals.get(0),mv);
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(C)Ljava/lang/String;", false);
             return;
         }
         if (s.identifier.equals("floor")) {
             generateExpression(s.paramVals.get(0),mv);
-            mv.visitInsn(Opcodes.F2I);
+            mv.visitInsn(F2I);
             return;
         }
         if (s.identifier.equals("len")) {
             generateExpression(s.paramVals.get(0),mv);
             if (s.paramVals.get(0).exprType.type.equals("string"))
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false); // Invoke the length() method
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "length", "()I", false); // Invoke the length() method
             else
-                mv.visitInsn(Opcodes.ARRAYLENGTH);
+                mv.visitInsn(ARRAYLENGTH);
             return;
         }
         try {
@@ -464,7 +464,7 @@ public class CodeGenerator implements Opcodes{
 
         ClassWriter new_cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         String bn = containerName + "$" + record.identifier;
-        new_cw.visit(Opcodes.V1_8,Opcodes.ACC_PUBLIC | ACC_STATIC,bn,null,"java/lang/Object",null);
+        new_cw.visit(V1_8,ACC_PUBLIC | ACC_STATIC,bn,null,"java/lang/Object",null);
 
         String constructorDesc = "";
         for(ASTNodes.RecordVar rv : record.recordVars){
@@ -475,7 +475,7 @@ public class CodeGenerator implements Opcodes{
                 // RecordVar is a struct
                 new_cw.visitInnerClass(containerName + "$" + rv.type.type, containerName, rv.type.type, ACC_PUBLIC | ACC_STATIC);
             }
-            new_cw.visitField(Opcodes.ACC_PUBLIC, rv.identifier, t.getDescriptor(), null, null );
+            new_cw.visitField(ACC_PUBLIC, rv.identifier, t.getDescriptor(), null, null );
         }
         constructorDesc = "(" + constructorDesc + ")V";
         try {
@@ -521,7 +521,7 @@ public class CodeGenerator implements Opcodes{
         params += ")";
         params += typeToAsmType(f.returnType).getDescriptor();
 
-        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, f.identifier,params,null,null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC, f.identifier,params,null,null);
 
         // give the right names to the parameters
         for (int i = 0; i < f.paramList.size(); i++) {
@@ -568,7 +568,7 @@ public class CodeGenerator implements Opcodes{
         if(mv == mmv){
 
             // Currently in global code, use fields not local var
-            cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
+            cw.visitField(ACC_PUBLIC | ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
             generateExpression(creation.varExpr, mv);
             if (creation.varExpr != null)
                 mv.visitFieldInsn(PUTSTATIC, containerName, creation.identifier, desc);
@@ -608,7 +608,7 @@ public class CodeGenerator implements Opcodes{
 
         Object val = evaluateConstExpr(creation.initExpr);
         constValues.put(creation.identifier, val );
-        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, creation.identifier,
+        cw.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, creation.identifier,
                 typeString.get(creation.type), null, val ).visitEnd();
 
 
@@ -830,7 +830,7 @@ public class CodeGenerator implements Opcodes{
             ASTNodes.ModExpr modExpr = (ASTNodes.ModExpr) expr;
             generateExpression(modExpr.expr1, mv);
             generateExpression(modExpr.expr2, mv);
-            mv.visitInsn(Opcodes.IREM);
+            mv.visitInsn(IREM);
         }
         else if (expr instanceof ASTNodes.NegateExpr) {
             ASTNodes.NegateExpr negExpr = (ASTNodes.NegateExpr) expr;
