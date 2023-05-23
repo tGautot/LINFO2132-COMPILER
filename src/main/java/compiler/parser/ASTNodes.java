@@ -39,18 +39,26 @@ public class ASTNodes {
 
     static public class Type{
         public String type;
-        public boolean isArray;
+        public boolean isArray; // If isArray is true then object is actually an ArrayType and can be casted
+        public int arrayDims;
 
         public Type() {}
 
         public Type(String type, boolean isArray) {
             this.type = type;
             this.isArray = isArray;
+            this.arrayDims= isArray ? 1 : 0;
+        }
+
+        public Type(String type, boolean isArray, int arrayDims) {
+            this.type = type;
+            this.isArray = isArray;
+            this.arrayDims= arrayDims;
         }
 
         @Override
         public String toString() {
-            return "Type(" + type + (isArray ? "[]" : "" ) + ")";
+            return "Type(" + type + (isArray ? "[](" + arrayDims + ")" : "" ) + ")";
         }
 
         @Override
@@ -58,12 +66,12 @@ public class ASTNodes {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Type type1 = (Type) o;
-            return isArray == type1.isArray && type.equals(type1.type);
+            return isArray == type1.isArray && type.equals(type1.type) && arrayDims == type1.arrayDims;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(type, isArray);
+            return Objects.hash(type, isArray, arrayDims);
         }
     }
 
@@ -711,22 +719,22 @@ public class ASTNodes {
 
     static public class ArrayCreation extends Expression {
         public Type type;
-        public Expression arraySize;
+        public ArrayList<Expression> arraySizes;
 
         public ArrayCreation() {
         }
 
-        public ArrayCreation(String typeIdentifier, Expression arraySize) {
+        public ArrayCreation(String typeIdentifier, ArrayList<Expression> arraySizes) {
             this.type = new Type();
             this.type.type = typeIdentifier;
-            this.arraySize = arraySize;
+            this.arraySizes = arraySizes;
         }
 
         @Override
         public String toString() {
             return "ArrayCreation{" + "\n" +
                     "type='" + type + '\'' + "\n" +
-                    ", arraySize=" + arraySize + "\n" +
+                    ", arraySizes=" + arraySizes + "\n" +
                     '}';
         }
 
@@ -735,12 +743,12 @@ public class ASTNodes {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ArrayCreation that = (ArrayCreation) o;
-            return Objects.equals(type, that.type) && Objects.equals(arraySize, that.arraySize);
+            return Objects.equals(type, that.type) && Objects.equals(arraySizes, that.arraySizes);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(type, arraySize);
+            return Objects.hash(type, arraySizes);
         }
     }
 

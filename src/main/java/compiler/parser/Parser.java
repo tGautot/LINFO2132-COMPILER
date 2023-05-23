@@ -239,6 +239,7 @@ public class Parser {
             readSymbol();
         } else if (nxtToken == OperatorToken.ASSIGN) {
             readSymbol();
+            //logger.log("Var creation is also assign", null);
             varCreationNode.varExpr = parseExpression();
         }
 
@@ -257,6 +258,7 @@ public class Parser {
      * @throws ParserException
      */
     public ASTNodes.Type parseType() throws ParserException {
+
         //logger.log("Parsing type " + nxtToken, null);
 
         if(!(nxtToken instanceof TypeToken || nxtToken instanceof IdentifierToken)){
@@ -272,16 +274,18 @@ public class Parser {
         if(nxtToken instanceof IdentifierToken)
             type.type = ((IdentifierToken) nxtToken).label;
 
-        if(lookAhead == SymbolToken.OPEN_BRACKET){
+        while(lookAhead == SymbolToken.OPEN_BRACKET) {
             type.isArray = true;
+            type.arrayDims++;
             readSymbol();
-            if(lookAhead != SymbolToken.CLOSE_BRACKET){
+            if (lookAhead != SymbolToken.CLOSE_BRACKET) {
                 throw new ParserException("Expected closing bracket ( ] ) after type[, but got " + lookAhead.toString());
             }
             readSymbol();
-
         }
+
         readSymbol();
+        //logger.log("Got type " + type.toString(), null);
         return type;
     }
 
@@ -701,7 +705,7 @@ public class Parser {
      * zzz.yyy.xxx[3].bbb.ccc -> ((((((zzz).yyy).xxx)[3]).bbb).ccc)
      *
      * Note that, although the language isn't supposed to support it, this function perfectly allows for accessing
-     * arrays of more than 1D (but they can't yet be created...)
+     * arrays of more than 1D (but they can't yet be created...) - WORKING ON IT
      *
      * @return RefToValue
      * @throws ParserException
@@ -762,24 +766,36 @@ public class Parser {
             node.type.type = ((IdentifierToken) nxtToken).label;
 
         readSymbol();
+        node.type.isArray = true;
+        node.type.arrayDims = 0;
         if(nxtToken != SymbolToken.OPEN_BRACKET){
             throw new ParserException("Expected [ after type for array creation in expression but got " + nxtToken);
         }
-        readSymbol();
-        if(nxtToken != SymbolToken.CLOSE_BRACKET){
-            throw new ParserException("Expected ] after type for array creation in expression but got " + nxtToken);
+        while(nxtToken == SymbolToken.OPEN_BRACKET){
+            node.type.arrayDims++;
+            readSymbol();
+            if(nxtToken != SymbolToken.CLOSE_BRACKET){
+                throw new ParserException("Expected ] after type for array creation in expression but got " + nxtToken);
+            }
+            readSymbol();
         }
-        readSymbol();
         if(nxtToken != SymbolToken.OPEN_PARENTHESIS){
             throw new ParserException("Expected ( after type[] for array creation in expression but got " + nxtToken);
         }
         readSymbol();
-        node.arraySize = parseExpression();
+        node.arraySizes = new ArrayList<>(); // parseExpression();
+        while(true){
+            node.arraySizes.add(parseExpression());
+            if(nxtToken != SymbolToken.COMMA) break;
+            readSymbol();
+        }
 
         if(nxtToken != SymbolToken.CLOSE_PARENTHESIS){
             throw new ParserException("Expected ) after size for array creation in expression but got " + nxtToken);
         }
         readSymbol();
+
+        //logger.log("got " + node.toString(), null);
         return node;
     }
 

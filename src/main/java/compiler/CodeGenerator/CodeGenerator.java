@@ -79,9 +79,14 @@ public class CodeGenerator implements Opcodes{
 
     public org.objectweb.asm.Type typeToAsmType(ASTNodes.Type t){
 
-        if(typeString.containsKey(t)) return Type.getType(typeString.get(t));
+        //if(typeString.containsKey(t)) return Type.getType(typeString.get(t));
+        String desc = "";
+        for(int i = 0; i < t.arrayDims; i++) desc += "[";
+        ASTNodes.Type nArr = new ASTNodes.Type(t.type, false);
+        if(typeString.containsKey(nArr))
+            return Type.getType(desc + typeString.get(nArr));
         // Is a struct
-        return Type.getType( (t.isArray ? "[" : "") + "L" + containerName + "$" + t.type + ";");
+        return Type.getType( desc + "L" + containerName + "$" + t.type + ";");
 
     }
 
@@ -287,26 +292,29 @@ public class CodeGenerator implements Opcodes{
         if(rtv instanceof ASTNodes.Identifier){
             generateIdentifier((ASTNodes.Identifier) rtv, mv, toStore && topLvl);
         } else if(rtv instanceof ASTNodes.ArrayAccess){
+            ;
             ASTNodes.ArrayAccess aa = (ASTNodes.ArrayAccess) rtv;
             generateRefToValue(aa.ref, mv, toStore, false);
             generateExpression(aa.arrayIndex, mv);
             Type owner = typeToAsmType(aa.ref.exprType);
             if(!(topLvl && toStore)) {
-                // Following doesnt work, always return AALOAD
-                // mv.visitInsn(owner.getOpcode(IALOAD));
-                switch(aa.ref.exprType.type){
-                    case "int":
-                        mv.visitInsn(IALOAD);
-                        break;
-                    case "real":
-                        mv.visitInsn(FALOAD);
-                        break;
-                    case "bool":
-                        mv.visitInsn(BALOAD);
-                        break;
-                    default:
-                        mv.visitInsn(AALOAD);
-                        break;
+                if(aa.ref.exprType.arrayDims > 1){
+                    mv.visitInsn(AALOAD);
+                } else {
+                    switch (aa.ref.exprType.type) {
+                        case "int":
+                            mv.visitInsn(IALOAD);
+                            break;
+                        case "real":
+                            mv.visitInsn(FALOAD);
+                            break;
+                        case "bool":
+                            mv.visitInsn(BALOAD);
+                            break;
+                        default:
+                            mv.visitInsn(AALOAD);
+                            break;
+                    }
                 }
             }
         } else if(rtv instanceof ASTNodes.ObjectAccess){
@@ -751,20 +759,28 @@ public class CodeGenerator implements Opcodes{
 
     private void generateArrayCreation(ASTNodes.ArrayCreation e, MethodVisitor mv) {
         //System.out.println("Generating array creation");
-        generateExpression(e.arraySize, mv);
-        if(e.type.type.equals("int")){
-            mv.visitIntInsn(NEWARRAY, T_INT);
-            return;
-        } else if (e.type.type.equals("real")){
-            mv.visitIntInsn(NEWARRAY, T_FLOAT);
-            return;
-        } else if (e.type.type.equals("bool")){
-            // Maybe problem with comparison since there bool are ints
-            mv.visitIntInsn(NEWARRAY, T_BOOLEAN);
-            return;
+        for(ASTNodes.Expression asExp : e.arraySizes) {
+            generateExpression(asExp, mv);
+        }
+        if(e.type.arrayDims == 1) {
+            if (e.type.type.equals("int")) {
+                mv.visitIntInsn(NEWARRAY, T_INT);
+                return;
+            } else if (e.type.type.equals("real")) {
+                mv.visitIntInsn(NEWARRAY, T_FLOAT);
+                return;
+            } else if (e.type.type.equals("bool")) {
+                // Maybe problem with comparison since there bool are ints
+                mv.visitIntInsn(NEWARRAY, T_BOOLEAN);
+                return;
+            } else {
+                // Is a object, String or other
+
+                mv.visitTypeInsn(ANEWARRAY, typeToAsmType(new ASTNodes.Type(e.type.type, false)).getInternalName());
+            }
         } else {
-            // Is a object, String or other
-            mv.visitTypeInsn(ANEWARRAY, typeToAsmType(e.type).getInternalName());
+            System.out.println("Creating N-Dim-Array");
+            mv.visitMultiANewArrayInsn(typeToAsmType(e.type).getDescriptor(), e.type.arrayDims);
         }
     }
 

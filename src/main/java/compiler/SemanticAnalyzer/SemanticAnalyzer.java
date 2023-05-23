@@ -283,7 +283,11 @@ public class SemanticAnalyzer {
 
             } else if (ele instanceof Integer) {
                 // type is no more an array because 2D arrays not allowed
-                type = new ASTNodes.Type(type.type,false);
+                if(type.arrayDims == 0){
+                    throw new SemanticAnalyzerException("Tried accessing one too many dimension of array");
+                }
+                type = new ASTNodes.Type(type.type,type.arrayDims > 1, type.arrayDims-1);
+
             }
             rtv.exprType = type;
         }
@@ -573,13 +577,18 @@ public class SemanticAnalyzer {
             if (creation.type.type.equals("void")) {
                 throw new SemanticAnalyzerException("void type not allowed for array");
             }
-
-            ASTNodes.Type type = analyzeExpression(creation.arraySize,table);
-            if (type.type != "int") {
-                throw new SemanticAnalyzerException("array size should be int but got " + type);
+            if(creation.type.arrayDims != creation.arraySizes.size()){
+                throw new SemanticAnalyzerException("Array of dimension " + creation.type.arrayDims + " but " +
+                        creation.arraySizes.size() + " dimension given when creating");
+            }
+            for(ASTNodes.Expression arrSize : creation.arraySizes) {
+                ASTNodes.Type type = analyzeExpression(arrSize, table);
+                if (type.type != "int") {
+                    throw new SemanticAnalyzerException("array size should be int but got " + type);
+                }
             }
 
-            ASTNodes.Type actualType = new ASTNodes.Type(creation.type.type, true);
+            ASTNodes.Type actualType = new ASTNodes.Type(creation.type.type, true, creation.type.arrayDims);
             return expr.exprType =  actualType;
         } else if (expr instanceof ASTNodes.MathExpr) {
             return expr.exprType =  analyzeMathExpr((ASTNodes.MathExpr) expr,table);
