@@ -86,7 +86,7 @@ public class Lexer {
                     if(nxt.toString().equals("/*")){
                         // diff de */
                         char[] newChars = {' ',' '};
-                        while (newChars[1] != '/' && newChars[0] != '*') {
+                        while (newChars[1] != '/' || newChars[0] != '*') {
                             newChars[0] = newChars[1];
                             newChars[1] = (char) this.input.read();
                         }

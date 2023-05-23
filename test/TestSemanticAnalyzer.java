@@ -134,6 +134,30 @@ public class TestSemanticAnalyzer {
     }
 
     @Test
+    public void testArrayTypes() throws SemanticAnalyzerException {
+        // correct input
+        String input = "var a bool[] = bool[](5); var b real = a[3];";
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        try {
+            analyzer.analyze(sl,analyzer.symbolTable,true);
+        } catch (SemanticAnalyzerException e) {
+            return;
+        }
+
+        assertTrue(false);
+    }
+
+    @Test
     public void testForLoop() throws SemanticAnalyzerException {
         // correct input
         String input = "var i int = 0;\n" +
