@@ -148,9 +148,13 @@ public class TestSemanticAnalyzer {
         }
 
         SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
-        analyzer.analyze(sl,analyzer.symbolTable,true);
+        try {
+            analyzer.analyze(sl,analyzer.symbolTable,true);
+        } catch (SemanticAnalyzerException e) {
+            return;
+        }
 
-        assertTrue(true);
+        assertTrue(false);
     }
 
     @Test

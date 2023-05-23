@@ -1,0 +1,10 @@
+var a real = 3.14
+a += 1
+writeReal(a)
+
+if a >= 4 {
+    writeln("CompWorking")
+    writeReal(a/2+5)
+} else {
+    writeln("????")
+}

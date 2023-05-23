@@ -21,6 +21,28 @@ import static org.junit.Assert.*;
 public class TestCodeGenerator {
 
     @Test
+    public void baseTest() throws IOException, SemanticAnalyzerException, ClassNotFoundException {
+        Path filePath = Path.of("./test/simple_code_copie.txt");
+
+        String input = Files.readString(filePath);
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
+        CodeGenerator generator = new CodeGenerator(sl);
+        generator.generateCode("Main");
+
+        assertTrue(true);
+    }
+
+    @Test
     public void testInt() throws IOException, SemanticAnalyzerException, ClassNotFoundException {
         Path filePath = Path.of("./test/test1CodeGenerator.txt");
 
@@ -160,6 +182,48 @@ public class TestCodeGenerator {
         while((line = bf.readLine()) != null) {
             System.out.print(line + "\n");
             assertTrue(line.equals(expected.get(i)));
+            i++;
+        }
+        System.out.println(i);
+        assertEquals(i, expected.size());
+    }
+
+
+    @Test
+    public void testMixIntReal() throws IOException, SemanticAnalyzerException, ClassNotFoundException {
+        Path filePath = Path.of("./test/testMixIntReal.txt");
+
+        String input = Files.readString(filePath);
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+        SemanticAnalyzer analyzer = new SemanticAnalyzer(sl);
+        analyzer.analyze(sl,analyzer.symbolTable,true);
+        CodeGenerator generator = new CodeGenerator(sl);
+        generator.generateCode("Main");
+
+        List<String> expected = new ArrayList<>();
+        expected.add("4.14");
+        expected.add("CompWorking");
+        expected.add("7.07");
+
+        String[] cmd = new String[] {"java", "Main"};
+        Process proc = new ProcessBuilder(cmd).start();
+
+        BufferedReader bf =
+                new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+        String line = "";
+        int i = 0;
+        while((line = bf.readLine()) != null) {
+            System.out.print(line + "\n");
+            assertTrue(line.startsWith(expected.get(i)));
             i++;
         }
         System.out.println(i);
