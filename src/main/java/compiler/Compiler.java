@@ -19,11 +19,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-// javac -classpath asm.jar -sourcepath . Compiler.java CodeGenerator/*.java Lexer/*.java parser/*.java SemanticAnalyzer/*.java Logger/*.java
-// en étant dans le dossier "compiler"
-
-// java compiler.Compiler compiler/simple_code_copie.txt MAIN
-// en étant dans le dossier "java"
 
 public class Compiler {
     public static void main(String[] args) throws IOException, SemanticAnalyzerException {
@@ -47,7 +42,6 @@ public class Compiler {
         CodeGenerator generator = new CodeGenerator(sl);
 
         generator.generateCode(args[1]);
-
 
     }
 

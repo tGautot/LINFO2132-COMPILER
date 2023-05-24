@@ -128,10 +128,7 @@ public class SemanticAnalyzer {
                 analyzeStatement(statementList.statements.get(i), table);
             }
         }
-        /*
-        for (ASTNodes.Statement s : statementList.statements) {
-            analyzeStatement(s,table);
-        }*/
+
     }
 
     public void analyzeStatement(ASTNodes.Statement s,SymbolTable table) throws SemanticAnalyzerException {
@@ -238,10 +235,7 @@ public class SemanticAnalyzer {
                     throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
 
                 }
-                //if (!tParam.get(i).type.equals(type)) {
-                //else {
-                  //  throw new SemanticAnalyzerException("wrong type for argument " + tParam.get(i).identifier + " in function call " + call.identifier + ", got : "+type);
-                //}
+
             }
         }
 
@@ -339,7 +333,7 @@ public class SemanticAnalyzer {
             table.addVal(creation.identifier);
             ASTNodes.Type assignedType = analyzeExpression(creation.valExpr,table);
             if (creation.type.type.equals("real") && assignedType.type.equals("int") && !creation.type.isArray && !assignedType.isArray) {
-                // allow a val double (array or not) to be assigned to int
+                // allow a val double to be assigned to int
                 return;
             }
             if (!creation.type.equals(assignedType)) {
@@ -358,7 +352,7 @@ public class SemanticAnalyzer {
         if (creation.varExpr != null) {
             ASTNodes.Type type = analyzeExpression(creation.varExpr,table);
             if (creation.type.type.equals("real") && type.type.equals("int") && !creation.type.isArray && !type.isArray) {
-                // allow a var double (array or not) to be assigned to int
+                // allow a var double to be assigned to int
                 return;
             }
             if (!creation.type.equals(type)) {
@@ -384,7 +378,7 @@ public class SemanticAnalyzer {
             table.addConst(creation.identifier);
             ASTNodes.Type type = analyzeExpression(creation.initExpr,table);
             if (creation.type.type.equals("real") && type.type.equals("int") && !creation.type.isArray && !type.isArray) {
-                // allow a const double (array or not) to be assigned to int
+                // allow a const double to be assigned to int
                 return;
             }
             if (!creation.type.equals(type)) {
@@ -397,9 +391,6 @@ public class SemanticAnalyzer {
         ASTNodes.Type type = functionDef.returnType;
         ASTNodes.StatementList block = functionDef.functionCode;
         if (type.equals(new ASTNodes.Type("void",false))) {
-            /*if (( (ASTNodes.ReturnExpr) block.statements.get(block.statements.size()-1)).expr != null ) {
-                throw new SemanticAnalyzerException("void function " + functionDef.identifier +  "cannot return anything");
-            }*/
 
             if (block.statements.get(block.statements.size()-1) instanceof ASTNodes.ReturnExpr) {
                 ASTNodes.ReturnExpr ret = (ASTNodes.ReturnExpr) block.statements.get(block.statements.size()-1);
@@ -427,10 +418,6 @@ public class SemanticAnalyzer {
                 throw new SemanticAnalyzerException("function " + functionDef.identifier +  " returns wrong type : " + actualReturnType + " instead of " + type);
 
             }
-            //if (!type.equals(actualReturnType)) {
-            //else {
-              //  throw new SemanticAnalyzerException("function " + functionDef.identifier +  " returns wrong type : " + actualReturnType + " instead of " + type);
-            //}
             return type;
         }
     }

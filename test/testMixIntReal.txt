@@ -57,8 +57,8 @@ if 4==4.0 and not(tab3[0][0]) and not(tab3[1][0]) {
 }
 
 
-//var myStruct struct = struct(tab2,len(tab2),len(tab2[0]))
-var myStruct struct = struct(tab2,4,4)
+var myStruct struct = struct(tab2,len(tab2),len(tab2[0]))
+//var myStruct struct = struct(tab2,4,4)
 myStruct.tab[1][2] = 23+43.3+tab1[0]
 writeReal(myStruct.tab[1][2]) // 70.3
 
