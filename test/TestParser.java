@@ -476,4 +476,23 @@ public class TestParser {
 
     }
 
+
+    @Test
+    public void testSemicolons() throws IOException {
+        // This test is considered valid if the parser doesn't crash
+        Path filePath = Path.of("./test/testSemicolons.txt");
+
+        String input = Files.readString(filePath);
+        StringReader reader = new StringReader(input);
+        Lexer lexer = new Lexer(reader);
+        Parser parser = new Parser(lexer);
+        ASTNodes.StatementList sl;
+        try {
+            sl = parser.parseCode();
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+        assertTrue(true);
+    }
+
 }

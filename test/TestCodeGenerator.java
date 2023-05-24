@@ -22,7 +22,7 @@ public class TestCodeGenerator {
 
     @Test
     public void baseTest() throws IOException, SemanticAnalyzerException, ClassNotFoundException {
-        Path filePath = Path.of("./test/simple_code_copie.txt");
+        Path filePath = Path.of("./test/simple_code.txt");
 
         String input = Files.readString(filePath);
         StringReader reader = new StringReader(input);

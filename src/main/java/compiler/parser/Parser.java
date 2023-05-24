@@ -30,6 +30,9 @@ public class Parser {
     Lexer lexer;
     Logger logger;
 
+    // Used by parseReturn to know whether to expect an expression
+    boolean parsingVoidFunc;
+
     public Parser(Lexer lexer){
         this.lexer = lexer;
         this.logger = Logger.getInstance();
@@ -234,10 +237,7 @@ public class Parser {
         readSymbol();
         varCreationNode.type = parseType();
 
-        if(nxtToken == SymbolToken.SEMICOLON){
-            // End of var creation
-            readSymbol();
-        } else if (nxtToken == OperatorToken.ASSIGN) {
+        if(nxtToken == OperatorToken.ASSIGN)  {
             readSymbol();
             //logger.log("Var creation is also assign", null);
             varCreationNode.varExpr = parseExpression();
@@ -369,7 +369,9 @@ public class Parser {
             throw new ParserException("Expected `{` after function prototype but got " + nxtToken.toString());
         }
         readSymbol();
+        parsingVoidFunc = node.returnType.type.equals("void");
         node.functionCode = parseCode();
+        parsingVoidFunc = false;
         if(nxtToken != SymbolToken.CLOSE_CB){
             throw new ParserException("Expected `}` after function code but got " + nxtToken.toString());
         }
@@ -570,7 +572,7 @@ public class Parser {
         readSymbol();
         ASTNodes.ReturnExpr node = new ASTNodes.ReturnExpr();
         node.expr = new ASTNodes.NullExpr();
-        if(nxtToken == SymbolToken.SEMICOLON){
+        if(parsingVoidFunc){
             return node;
         }
         node.expr = parseExpression();

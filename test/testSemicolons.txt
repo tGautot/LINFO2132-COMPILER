@@ -1,0 +1,19 @@
+
+
+proc printHello(String name) void {
+    write("Hello ") writeln(name) return
+}
+
+proc printGoodbye(String name) void {
+    write("Goodbye ");
+    writeln(name);
+}
+
+record Point {
+    x int;;;;
+    y int
+    z int
+}
+
+var rom String = "Romain" printHello(rom) printGoodbye("Romain")
+var i int i = 0 writeInt(i) i+=5 var j int = 4 writeInt(i+j)

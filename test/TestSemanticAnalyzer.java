@@ -429,26 +429,23 @@ public class TestSemanticAnalyzer {
         assertTrue(true);
 
 
-        // incorrect input : void function returns something but should not
+        // Invalid input : void function has expr after return, parser will parse return (alone) then try to parse
+        // the expr as statement, parser will throw error
         input = "proc myfunc(a int, b real[], c bool) void {" +
                 "var aaa int[] = int[](7)" +
-                "return a" +
+                "return a " +
                 "}";
         reader = new StringReader(input);
         lexer = new Lexer(reader);
         parser = new Parser(lexer);
+
+        boolean expThrown = false;
         try {
             sl = parser.parseCode();
         } catch (ParserException e) {
-            throw new RuntimeException(e);
+            expThrown = true;
         }
-
-        analyzer = new SemanticAnalyzer(sl);
-
-        SemanticAnalyzer finalAnalyzer = analyzer;
-        ASTNodes.StatementList finalSl = sl;
-        assertThrows(SemanticAnalyzerException.class,
-                ()-> finalAnalyzer.analyze(finalSl, finalAnalyzer.symbolTable,true));
+        assertTrue(expThrown);
 
         // incorrect input : returns nothing but it should return
         input = "proc myfunc(a int, b real[], c bool) int {" +
