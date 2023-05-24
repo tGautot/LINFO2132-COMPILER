@@ -635,12 +635,13 @@ public class CodeGenerator implements Opcodes{
             } catch (SemanticAnalyzerException e) {
                 throw new RuntimeException(e);
             }
+            if (creation.varExpr != null) {
+                if (creation.type.type.equals("real") && creation.varExpr.exprType.type.equals("int") && !creation.type.isArray) {
+                    mv.visitInsn(I2F);
+                }
 
-            if (creation.type.type.equals("real") && creation.varExpr.exprType.type.equals("int") && !creation.type.isArray) {
-                mv.visitInsn(I2F);
-            }
-            if (creation.varExpr != null)
                 mv.visitVarInsn(varType.getOpcode(ISTORE), idx);
+            }
         }
 
     }
