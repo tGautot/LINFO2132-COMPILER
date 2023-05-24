@@ -11,6 +11,8 @@ record Point {
     idt Identity;
 }
 
+
+
 record History {
     locs Point[];
     idt Identity;
@@ -46,6 +48,9 @@ var newPointIdt Identity = Identity("NegPoint", -1);
 newPs[2] = Point(-1,-1,-1, newPointIdt);
 var newHistIdt Identity = Identity("Hist", hist.idt.id+1);
 hist = History(newPs, newHistIdt);
+var tab1 string[] = string[](floor(3.3))
+tab1[0] = chr(76)
+tab1[1] = hist.idt.name
 
 writeln(p.idt.name) // "Test"
 writeln(p2.idt.name) // "Squared"
@@ -60,5 +65,6 @@ else {
 }
 writeln(ps[1].idt.name) // "else"
 writeln(p2.idt.name) // "else"
-
+writeln(tab1[0]) // " ??? "
+writeln(tab1[1]) // "Hist"
 

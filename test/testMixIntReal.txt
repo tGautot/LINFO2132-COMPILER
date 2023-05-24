@@ -1,3 +1,11 @@
+
+record struct {
+    tab real[][];
+    m int;
+    n int;
+
+}
+
 var a real = 3.14
 a += 1
 writeReal(a)
@@ -8,3 +16,66 @@ if a >= 4 {
 } else {
     writeln("????")
 }
+
+var tab1 real[] = real[](5)
+var i int = 0
+for i=0 to floor(5.3) by 1 {
+    tab1[i] += i*4.3+7.6/4-7.9+10%11
+}
+
+
+
+tab1[0] = 4
+for i=0 to 5 by 1 {
+    writeReal(tab1[i])
+}
+
+
+
+
+i = 16
+
+
+var tab2 real[][] = real[][](4,4)
+var tab3 bool[][] = bool[][](4,4)
+
+var j int = 0
+while i > 1 {
+    tab2[j][j] = i
+    tab3[j][j] = false
+    i /= 2
+    j+=1
+}
+
+
+for i=0 to 4 by 1 {
+    writeReal(tab2[i][i])
+}
+
+if 4==4.0 and not(tab3[0][0]) and not(tab3[1][0]) {
+    writeln("OK")
+}
+
+
+//var myStruct struct = struct(tab2,len(tab2),len(tab2[0]))
+var myStruct struct = struct(tab2,4,4)
+myStruct.tab[1][2] = 23+43.3+tab1[0]
+writeReal(myStruct.tab[1][2]) // 70.3
+
+
+var tot real = 1
+
+for i=0 to myStruct.m by 1 {
+    for j=0 to myStruct.n by 1 {
+        if myStruct.tab[i][j] == 0 {
+            myStruct.tab[i][j] = 1
+        }
+        tot *= myStruct.tab[i][j]
+    }
+}
+writeReal(tot)
+
+tab1 = tab2[0]
+writeReal(tab1[0])
+
+

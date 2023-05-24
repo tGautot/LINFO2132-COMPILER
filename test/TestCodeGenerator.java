@@ -70,6 +70,7 @@ public class TestCodeGenerator {
         expected.add(104);
         expected.add(-10);
         expected.add(8);
+        expected.add(3);
 
         String[] cmd = new String[] {"java", "Main"};
         Process proc = new ProcessBuilder(cmd).start();
@@ -114,6 +115,8 @@ public class TestCodeGenerator {
         expected.add("A");
         expected.add("else");
         expected.add("else");
+        expected.add("L");
+        expected.add("Hist");
 
         String[] cmd = new String[] {"java", "Main"};
         Process proc = new ProcessBuilder(cmd).start();
@@ -212,6 +215,21 @@ public class TestCodeGenerator {
         expected.add("4.14");
         expected.add("CompWorking");
         expected.add("7.07");
+
+        expected.add("4.0");
+        expected.add("8.3");
+        expected.add("12.6");
+        expected.add("16.9");
+        expected.add("21.2");
+
+        expected.add("16");
+        expected.add("8");
+        expected.add("4");
+        expected.add("2");
+        expected.add("OK");
+        expected.add("70.3");
+        expected.add("71987.2");
+        expected.add("16");
 
         String[] cmd = new String[] {"java", "Main"};
         Process proc = new ProcessBuilder(cmd).start();

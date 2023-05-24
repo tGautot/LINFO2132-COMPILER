@@ -49,6 +49,10 @@ var newPointIdt Identity = Identity("NegPoint", -1);
 newPs[2] = Point(-1,-1,-1, newPointIdt);
 var newHistIdt Identity = Identity("Hist", hist.idt.id+1);
 hist = History(newPs, newHistIdt);
+var tab1 int[] = int[](len(newPs))
+
+tab1[1] = len(hist.locs)
+
 
 
 
@@ -73,6 +77,8 @@ if newPs[2].x==-1 and newPs[2].y==-1 and newPs[2].z==-1 {
 writeInt(newPs[2].idt.id) // -10
 newPointIdt.id = len(newPointIdt.name) 
 writeInt(newPointIdt.id) //8
+writeInt(tab1[1]) // 3
+
 
 
 
