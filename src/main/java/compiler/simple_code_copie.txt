@@ -1,53 +1,27 @@
+const a int = 10;
+const b int = 20;
+const c real = (a+b)/2.0;
 
-record Identity {
-    name string;
-    id int;
+
+proc square(v real){
+    return v*v;
 }
 
-record Point {
-    x int;
-    y int;
-    z int;
-    idt Identity;
+var i int; var j int; var k int;
+
+for i=0 to 5 by 1 {
+    var x int = i*2;
+    for j to 10 by 2 {
+        var y int = x*j;
+        for k to 15 by 3 {
+            var z int = k+y;
+            writeInt(z),
+        }
+    }
 }
 
-record History {
-    locs Point[];
-    idt Identity;
-}
 
-proc printHello() void {
-    writeln("Hello");
-}
 
-proc squarePoint(p Point) Point {
-    var newP Point = Point(
-        p.x*p.x,
-        p.y*p.y,
-        p.z*p.z,
-        Identity("Squared", p.idt.id + 1)
-    );
-    return newP;
-}
-
-var p Point = Point(5,6,7, Identity("Test", 0));
-var p2 Point = squarePoint(p);
-var ps Point[] = Point[](2);
-
-ps[0] = p;
-ps[1] = p2;
-
-var hist History = History(ps, Identity("Hist", 0))
-
-var newPs Point[] = Point[](3);
-newPs[0] = ps[0];
-newPs[1] = ps[1];
-var newPointIdt Identity = Identity("NegPoint", -1);
-newPs[2] = Point(-1,-1,-1, newPointIdt);
-var newHistIdt Identity = Identity("Hist", hist.idt.id+1);
-hist = History(newPs, newHistIdt);
-
-writeInt(hist.locs[0].x);
 
 
 

@@ -84,14 +84,26 @@ public class SymbolIndexTable {
             return cur.table.remove(key);
         }
 
-        public Integer nxtAvailableIndex(){
+        public Integer getHighestIndex(){
             int maxIdx = -1;
+            for (Map.Entry<String, Pair<Integer, String>> set :
+                    table.entrySet()) {
+                Integer newIdx = set.getValue().a;
+                if(newIdx > maxIdx) {
+                    maxIdx = newIdx;
+                }
+            }
+            return maxIdx;
+        }
+
+        public Integer nxtAvailableIndex(){
+            int maxIdx = prevTable == null ? -1 : prevTable.getHighestIndex();
             String highestIdDesc = "";
             for (Map.Entry<String, Pair<Integer, String>> set :
                     table.entrySet()) {
                 Integer newIdx = set.getValue().a;
                 if(newIdx > maxIdx) {
-                    maxIdx = (newIdx > maxIdx) ? newIdx : maxIdx;
+                    maxIdx = newIdx;
                     highestIdDesc = set.getValue().b;
                 }
             }

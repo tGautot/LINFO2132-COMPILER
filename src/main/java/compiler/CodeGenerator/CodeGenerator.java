@@ -603,7 +603,7 @@ public class CodeGenerator implements Opcodes{
         Type varType = typeToAsmType(creation.type);
         String desc = varType.getDescriptor();
 
-        if(mv == mmv){
+        if(sit.prevTable == null){ // Is top level context
 
             // Currently in global code, use fields not local var
             cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, creation.identifier, desc,null,null).visitEnd();
@@ -629,7 +629,8 @@ public class CodeGenerator implements Opcodes{
             if (creation.type.type.equals("real") && creation.varExpr.exprType.type.equals("int") && !creation.type.isArray) {
                 mv.visitInsn(I2F);
             }
-            mv.visitVarInsn(varType.getOpcode(ISTORE), idx);
+            if (creation.varExpr != null)
+                mv.visitVarInsn(varType.getOpcode(ISTORE), idx);
         }
 
     }
@@ -772,22 +773,6 @@ public class CodeGenerator implements Opcodes{
         return;
     }
 
-
-    private void generateArrayAccess(ASTNodes.ArrayAccess a, MethodVisitor mv){
-        assert (a.ref instanceof ASTNodes.Identifier); // TODO dont assert this
-        ASTNodes.Identifier idt = (ASTNodes.Identifier) a.ref;
-        Pair<Integer, String> p;
-        try {
-             p = sit.get(idt.id);
-        } catch (SemanticAnalyzerException e) {
-            throw new RuntimeException(e);
-        }
-        Type t = Type.getType(p.b);
-        mv.visitVarInsn(t.getOpcode(ALOAD), p.a);
-        generateExpression(a.arrayIndex, mv);
-        mv.visitInsn(t.getOpcode(IALOAD));
-
-    }
 
     private void generateArrayCreation(ASTNodes.ArrayCreation e, MethodVisitor mv) {
         //System.out.println("Generating array creation");
